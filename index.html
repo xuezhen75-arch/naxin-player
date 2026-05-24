@@ -283,7 +283,7 @@ body {
 .anim-row input[type=range] { width: 60px; height: 4px; }
 
 /* ============================================================
-   音乐 — 8路横向滑块
+   音乐 — 12路横向滑块
    ============================================================ */
 .track-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
 .track-row {
@@ -444,7 +444,7 @@ body {
 <!-- ======= 顶部栏 ======= -->
 <div class="header">
   <div class="logo">🎵 纳心音乐播放器</div>
-  <div class="brand">Naxin Player v1.4</div>
+  <div class="brand">Naxin Player v1.5</div>
   <div class="spacer"></div>
   <div class="theme-switch">
     <button onclick="setTheme('forest')" class="active" id="themeForest" title="森林绿">🌿</button>
@@ -499,12 +499,12 @@ body {
     </div>
   </div>
 
-  <!-- ===== 面板二：音乐分轨（8路横向滑块） ===== -->
+  <!-- ===== 面板二：音乐分轨（12路横向滑块） ===== -->
   <div class="panel" id="musicPanel">
     <div class="panel-header">
       <div class="panel-title">
         <span class="icon">🎹</span> 音乐分轨
-        <span class="panel-subtitle">— 8路独立控制</span>
+        <span class="panel-subtitle">— 12路独立控制</span>
       </div>
       <div class="panel-actions">
         <button class="btn-select-sm" onclick="showMusicPicker()">📂 选取</button>
@@ -514,7 +514,7 @@ body {
     </div>
     <!-- 曲目标签 -->
     <div class="tag-row music-tags" id="musicTags"></div>
-    <!-- 8路横向滑块 -->
+    <!-- 12路横向滑块 -->
     <div class="track-list" id="musicSliders"></div>
     <!-- 8个聆听效果选择 -->
     <div class="preset-grid" id="musicPresets">
@@ -597,7 +597,7 @@ body {
         <h4>🎹 音乐曲目管理</h4>
         <label>曲目名称</label>
         <input type="text" id="musicTrackName" placeholder="例如：森林晨曦">
-        <label>分轨文件（可多选，按选择顺序对应第1-8路）<span style="color:var(--text2);font-size:10px;">（支持 MP3 / OGG / WAV / AAC / M4A / FLAC / WebM，最多8个）</span></label>
+        <label>分轨文件（可多选，按选择顺序对应第1-12路）<span style="color:var(--text2);font-size:10px;">（支持 MP3 / OGG / WAV / AAC / M4A / FLAC / WebM，最多12个）</span></label>
         <input type="file" id="musicFiles" accept="audio/*,.mp3,.ogg,.wav,.aac,.m4a,.flac,.webm" multiple>
         <div class="btn-row">
           <button class="primary" onclick="uploadMusic()">📤 上传曲目</button>
@@ -610,10 +610,10 @@ body {
         <p style="font-size:11px;color:var(--text2);">
           <b>📊 存储用量</b><br>
           🌿 环境音：<span id="ambientStorage">-</span>（<span id="ambientCount">-</span> 个场景）<br>
-          🎹 音乐曲目：<span id="musicStorage">-</span>（<span id="musicCount">-</span> 首，支持8路分轨/首）<br>
+          🎹 音乐曲目：<span id="musicStorage">-</span>（<span id="musicCount">-</span> 首，支持12路分轨/首）<br>
           📦 总计：<span id="dbUsage">计算中...</span><br>
           💡 浏览器 IndexedDB 通常可存 <b>100MB~2GB</b>（取决于设备剩余空间）<br>
-          版本：v1.4 独立部署版<br>
+          版本：v1.5 独立部署版<br>
           音谋加H5接口：<span style="color:var(--accent);">已预留（/api/yinmoujia/sync）</span>
         </p>
         <div class="btn-row">
@@ -793,7 +793,7 @@ function toggleAmbientPlay() {
 }
 
 // ============================================================
-//  音乐分轨（8路独立GainNode）
+//  音乐分轨（12路独立GainNode）
 // ============================================================
 async function loadMusicBuffers(id) {
   const rec = await dbGet('music_files', id);
@@ -811,7 +811,7 @@ async function selectMusic(id) {
   document.querySelectorAll('#musicTags button').forEach(b => b.classList.toggle('active', b.dataset.id === id));
   try {
     musicBuffers = await loadMusicBuffers(id);
-    setStatus(`曲目加载完成（${musicBuffers.filter(b=>b).length}/8路）`);
+    setStatus(`曲目加载完成（${musicBuffers.filter(b=>b).length}/12路）`);
   } catch(e) {
     musicBuffers = [];
     setStatus('曲目加载失败: ' + (e.message||'未知错误'));
@@ -822,7 +822,7 @@ function startMusic() {
   stopMusic();
   if (!state.musicOn || musicBuffers.length === 0) return;
   musicSources = [];
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 12; i++) {
     if (!musicBuffers[i]) continue;
     const src = audioCtx.createBufferSource();
     src.buffer = musicBuffers[i]; src.loop = state.loop;
@@ -934,15 +934,15 @@ const PRESETS = {
   amb_forest:    { eq: [60,65,70,55,50,60,55,45,35,30] },
   amb_rain:      { eq: [25,30,40,60,65,55,45,35,25,20] },
   amb_ocean_p:   { eq: [90,80,70,60,50,45,40,35,40,45] },
-  // 音乐预设（8路音量值）
-  mus_default:   { music: [80,60,40,75,55,65,50,45] },
-  mus_soft:      { music: [50,40,35,50,40,45,35,30] },
-  mus_full:      { music: [90,85,75,90,80,85,75,70] },
-  mus_sparse:    { music: [60,30,20,50,25,35,20,15] },
-  mus_dream:     { music: [40,60,70,35,50,80,45,30] },
-  mus_classic:   { music: [70,80,50,40,35,60,55,45] },
-  mus_rhythm:    { music: [50,30,20,80,85,70,60,75] },
-  mus_ethereal:  { music: [30,50,60,40,45,70,55,20] },
+  // 音乐预设（12路音量值）
+  mus_default:   { music: [80,60,40,75,55,65,50,45,50,45,35,30] },
+  mus_soft:      { music: [50,40,35,50,40,45,35,30,45,35,30,25] },
+  mus_full:      { music: [90,85,75,90,80,85,75,70,80,75,65,60] },
+  mus_sparse:    { music: [60,30,20,50,25,35,20,15,30,20,15,10] },
+  mus_dream:     { music: [40,60,70,35,50,80,45,30,55,60,40,25] },
+  mus_classic:   { music: [70,80,50,40,35,60,55,45,50,40,35,30] },
+  mus_rhythm:    { music: [50,30,20,80,85,70,60,75,65,55,50,70] },
+  mus_ethereal:  { music: [30,50,60,40,45,70,55,20,35,45,30,15] },
 };
 function applyPreset(name) {
   const p = PRESETS[name]; if (!p) return;
@@ -966,7 +966,7 @@ function applyPreset(name) {
   setStatus(`已切换预设：${name}`);
 }
 function remapAllMusicGains() {
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 12; i++) {
     const slider = document.querySelector(`input[data-ch="${i}"]`);
     const v = slider ? parseInt(slider.value) / 100 : 0;
     const src = musicSources.find(s => s.ch === i);
@@ -1000,10 +1000,10 @@ function buildUI() {
     `;
     eqRow.appendChild(col);
   });
-  // 8路横向滑块
+  // 12路横向滑块
   const musicSliders = document.getElementById('musicSliders');
-  const defaultMus = [80,60,40,75,55,65,50,45];
-  for (let i = 0; i < 8; i++) {
+  const defaultMus = [80,60,40,75,55,65,50,45,60,55,40,35];
+  for (let i = 0; i < 12; i++) {
     const row = document.createElement('div'); row.className = 'track-row';
     row.innerHTML = `
       <div class="track-label">第${i+1}路</div>
@@ -1092,7 +1092,7 @@ async function uploadMusic() {
   const name = document.getElementById('musicTrackName').value.trim(), files = Array.from(document.getElementById('musicFiles').files);
   if (!name) { alert('请输入曲目名称'); return; }
   if (files.length===0) { alert('请选择分轨文件'); return; }
-  if (files.length>8) { alert('最多8个分轨文件'); return; }
+  if (files.length>12) { alert('最多12个分轨文件'); return; }
   const channels = []; for (const f of files) channels.push(await f.arrayBuffer());
   await dbPut('music_files', { id:'mus_'+Date.now(), name, channelCount:channels.length, channels, fileNames:files.map(f=>f.name), uploadedAt:new Date().toISOString() });
   document.getElementById('musicTrackName').value=''; document.getElementById('musicFiles').value='';
