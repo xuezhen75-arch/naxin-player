@@ -450,7 +450,7 @@ body {
 <!-- ======= 顶部栏 ======= -->
 <div class="header">
   <div class="logo">🎵 纳心音乐播放器</div>
-  <div class="brand">Naxin Player v1.7</div>
+  <div class="brand">Naxin Player v1.7.2</div>
   <div class="spacer"></div>
   <div class="theme-switch">
     <button onclick="setTheme('forest')" class="active" id="themeForest" title="森林绿">🌿</button>
@@ -699,6 +699,7 @@ async function dbClear(s) {
 const state = {
   ambientPlaying: false, musicPlaying: false, masterVol: 0.75, ambientOn: true, musicOn: true, loop: true,
   animSpeed: 1, animMode: 'soft', currentAmbientId: null, currentMusicId: null,
+  loadingMusic: false, // 防止重复加载
 };
 const EQ10_BANDS = [
   { freq: 32,   label: '32' },
@@ -858,16 +859,29 @@ function toggleAmbientPlay() {
 // ============================================================
 //  音乐分轨（12路独立GainNode）
 // ============================================================
-async function loadMusicBuffers(id) {
+async function loadMusicBuffers(id, onProgress) {
   const meta = await dbGet('music_files', id);  // JSON { id, name, channelCount, fileNames }
   if (!meta || !meta.channelCount) return [];
-  const bufs = [];
-  for (let i = 0; i < meta.channelCount; i++) {
-    try {
-      const data = await dbGetM('music_files', id, i);  // 获取单个分轨原始音频
-      bufs.push(await audioCtx.decodeAudioData(data.slice(0)));
-    } catch { bufs.push(null); }
+  // 并行下载+解码所有分轨 — 12路同时请求，不串行等
+  let completed = 0;
+  const total = Math.min(meta.channelCount, 12);
+  const promises = [];
+  for (let i = 0; i < total; i++) {
+    promises.push((async (ch) => {
+      try {
+        const data = await dbGetM('music_files', id, ch);
+        const buf = await audioCtx.decodeAudioData(data.slice(0));
+        completed++;
+        if (onProgress) onProgress(completed, total);
+        return buf;
+      } catch(e) {
+        completed++;
+        if (onProgress) onProgress(completed, total);
+        return null;
+      }
+    })(i));
   }
+  const bufs = await Promise.all(promises);
   // 补齐到12路，空位填null
   while (bufs.length < 12) bufs.push(null);
   return bufs;
@@ -893,16 +907,23 @@ async function selectMusic(id) {
   if (state.currentMusicId === id) return;
   ensureAudioCtx();
   state.currentMusicId = id;
+  musicBuffers = []; // 先清空，防止旧buffer被误用
+  updateTrackStates();
   document.querySelectorAll('#musicTags button').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; }
+  state.loadingMusic = true;
+  setStatus('⏳ 加载分轨中... 0/?');
   try {
-    musicBuffers = await loadMusicBuffers(id);
+    musicBuffers = await loadMusicBuffers(id, (done, total) => {
+      setStatus(`⏳ 加载分轨中... ${done}/${total}`);
+    });
     updateTrackStates();
-    setStatus(`曲目加载完成（${musicBuffers.filter(b=>b).length}/12路）`);
+    setStatus(`曲目加载完成（${musicBuffers.filter(b=>b).length}/12路可用）`);
   } catch(e) {
     musicBuffers = [];
     setStatus('曲目加载失败: ' + (e.message||'未知错误'));
   }
-  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; setStatus('请重新选取曲目后播放'); }
+  state.loadingMusic = false;
 }
 function startMusic() {
   stopMusic();
@@ -938,10 +959,12 @@ function toggleMusic() {
 function toggleMusicPlay() {
   if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; setStatus('音乐已暂停'); }
   else if (state.musicOn) {
+    if (state.loadingMusic) { setStatus('⏳ 分轨加载中，请稍候再播...'); return; }
     if ((!musicBuffers || musicBuffers.length === 0) && !state.currentMusicId) { setStatus('⚠ 请先选取音乐曲目再播放'); return; }
     if (!musicBuffers || musicBuffers.length === 0) {
       ensureAudioCtx();
-      loadMusicBuffers(state.currentMusicId).then(bufs => { musicBuffers = bufs; startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...'); }).catch(() => setStatus('⚠ 曲目加载失败'));
+      state.loadingMusic = true;
+      loadMusicBuffers(state.currentMusicId).then(bufs => { musicBuffers = bufs; state.loadingMusic = false; updateTrackStates(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...'); }).catch(() => { state.loadingMusic = false; setStatus('⚠ 曲目加载失败'); });
       return;
     }
     ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...');
@@ -955,14 +978,17 @@ function togglePlay() {
   const anyPlaying = state.ambientPlaying || state.musicPlaying;
   if (anyPlaying) { stopAll(); state.ambientPlaying = false; state.musicPlaying = false; document.getElementById('playBtn').textContent = '▶'; document.getElementById('ambPlayBtn').textContent = '▶'; document.getElementById('musPlayBtn').textContent = '▶'; setStatus('全部停止'); }
   else {
-    // 检查是否有选中素材
     const hasAmbient = ambientBuffer || state.currentAmbientId;
     const hasMusic = (musicBuffers && musicBuffers.length > 0) || state.currentMusicId;
     if (!hasAmbient && !hasMusic) { setStatus('⚠ 请先选取环境音或音乐再播放'); return; }
+    if (state.loadingMusic) { setStatus('⏳ 音乐分轨加载中，请稍候...'); return; }
     ensureAudioCtx();
     if (hasAmbient && !ambientBuffer) loadAmbientBuffer(state.currentAmbientId).then(buf => { ambientBuffer = buf; startAmbientOnly(); startAnimation(); }).catch(()=>{});
     else if (hasAmbient) { startAmbientOnly(); }
-    if (hasMusic && (!musicBuffers||musicBuffers.length===0)) loadMusicBuffers(state.currentMusicId).then(bufs => { musicBuffers = bufs; startMusicOnly(); }).catch(()=>{});
+    if (hasMusic && (!musicBuffers||musicBuffers.length===0)) {
+      state.loadingMusic = true;
+      loadMusicBuffers(state.currentMusicId).then(bufs => { musicBuffers = bufs; state.loadingMusic = false; updateTrackStates(); startMusicOnly(); }).catch(() => { state.loadingMusic = false; });
+    }
     else if (hasMusic) { startMusicOnly(); }
     if (hasAmbient) state.ambientPlaying = true;
     if (hasMusic) state.musicPlaying = true;
@@ -1208,7 +1234,7 @@ async function deleteAmbient(id) {
 async function deleteMusic(id) {
   if (!confirm('确定删除？')) return;
   await dbDelete('music_files', id);
-  if (state.currentMusicId===id) { state.currentMusicId=null; stopMusic(); musicBuffers=[]; updateTrackStates(); }
+  if (state.currentMusicId===id) { state.currentMusicId=null; stopMusic(); musicBuffers=[]; state.loadingMusic=false; updateTrackStates(); }
   await refreshMusicTags(); await refreshMusicFiles(); updateDBUsage();
 }
 async function updateDBUsage() {
