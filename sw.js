@@ -1,7 +1,7 @@
-// Naxin Player Service Worker v1 — 音频缓存 + 离线可用
-const CACHE_STATIC = 'naxin-static-v1';
-const CACHE_AUDIO = 'naxin-audio-v1';
-const CACHE_API   = 'naxin-api-v1';
+// Naxin Player Service Worker v2 — 音频缓存 + 离线可用
+const CACHE_STATIC = 'naxin-static-v2';
+const CACHE_AUDIO = 'naxin-audio-v2';
+const CACHE_API   = 'naxin-api-v2';
 
 // 预缓存 App Shell（安装时立即缓存）
 const STATIC_FILES = [

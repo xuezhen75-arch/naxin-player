@@ -283,6 +283,24 @@ body {
 .anim-row input[type=range] { width: 60px; height: 4px; }
 
 /* ============================================================
+   音乐 — 加载进度条
+   ============================================================ */
+#musicLoadBar {
+  display: none;
+  height: 6px; background: var(--border2); border-radius: 3px;
+  margin: 6px 0 2px; overflow: hidden;
+}
+#musicLoadBar .fill {
+  height: 100%; background: var(--music-accent); border-radius: 3px;
+  width: 0%; transition: width 0.3s ease;
+  background-image: linear-gradient(90deg, var(--music-accent) 0%, var(--music-border) 100%);
+}
+#musicLoadLabel {
+  display: none;
+  font-size: 11px; color: var(--text2); text-align: center; margin-bottom: 2px;
+}
+
+/* ============================================================
    音乐 — 12路横向滑块
    ============================================================ */
 .track-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
@@ -520,6 +538,9 @@ body {
     </div>
     <!-- 曲目标签 -->
     <div class="tag-row music-tags" id="musicTags"></div>
+    <!-- 加载进度条 -->
+    <div id="musicLoadLabel">⏳ 加载分轨中... <span id="musicLoadText">0/0</span></div>
+    <div id="musicLoadBar"><div class="fill" id="musicLoadFill"></div></div>
     <!-- 12路横向滑块 -->
     <div class="track-list" id="musicSliders"></div>
     <!-- 8个聆听效果选择 -->
@@ -912,15 +933,34 @@ async function selectMusic(id) {
   document.querySelectorAll('#musicTags button').forEach(b => b.classList.toggle('active', b.dataset.id === id));
   if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; }
   state.loadingMusic = true;
-  setStatus('⏳ 加载分轨中... 0/?');
+  // 显示进度条
+  const progBar = document.getElementById('musicLoadBar');
+  const progLabel = document.getElementById('musicLoadLabel');
+  const progFill = document.getElementById('musicLoadFill');
+  const progText = document.getElementById('musicLoadText');
+  progBar.style.display = 'block';
+  progLabel.style.display = 'block';
+  progFill.style.width = '0%';
+  progText.textContent = '0/?';
+  setStatus('⏳ 加载分轨中...');
   try {
     musicBuffers = await loadMusicBuffers(id, (done, total) => {
+      const pct = total > 0 ? Math.round(done / total * 100) : 0;
+      progFill.style.width = pct + '%';
+      progText.textContent = done + '/' + total;
       setStatus(`⏳ 加载分轨中... ${done}/${total}`);
     });
     updateTrackStates();
-    setStatus(`曲目加载完成（${musicBuffers.filter(b=>b).length}/12路可用）`);
+    const loaded = musicBuffers.filter(b => b).length;
+    progFill.style.width = '100%';
+    progText.textContent = loaded + '/' + loaded + ' ✓';
+    setStatus(`曲目加载完成（${loaded}/12路可用）`);
+    // 1秒后自动隐藏进度条
+    setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1200);
   } catch(e) {
     musicBuffers = [];
+    progBar.style.display = 'none';
+    progLabel.style.display = 'none';
     setStatus('曲目加载失败: ' + (e.message||'未知错误'));
   }
   state.loadingMusic = false;
@@ -964,7 +1004,28 @@ function toggleMusicPlay() {
     if (!musicBuffers || musicBuffers.length === 0) {
       ensureAudioCtx();
       state.loadingMusic = true;
-      loadMusicBuffers(state.currentMusicId).then(bufs => { musicBuffers = bufs; state.loadingMusic = false; updateTrackStates(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...'); }).catch(() => { state.loadingMusic = false; setStatus('⚠ 曲目加载失败'); });
+      const progBar = document.getElementById('musicLoadBar');
+      const progLabel = document.getElementById('musicLoadLabel');
+      const progFill = document.getElementById('musicLoadFill');
+      const progText = document.getElementById('musicLoadText');
+      progBar.style.display = 'block';
+      progLabel.style.display = 'block';
+      progFill.style.width = '0%';
+      progText.textContent = '0/?';
+      loadMusicBuffers(state.currentMusicId, (done, total) => {
+        const pct = total > 0 ? Math.round(done / total * 100) : 0;
+        progFill.style.width = pct + '%';
+        progText.textContent = done + '/' + total;
+      }).then(bufs => {
+        musicBuffers = bufs; state.loadingMusic = false; updateTrackStates();
+        progFill.style.width = '100%';
+        setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1200);
+        startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...');
+      }).catch(() => {
+        state.loadingMusic = false;
+        progBar.style.display = 'none'; progLabel.style.display = 'none';
+        setStatus('⚠ 曲目加载失败');
+      });
       return;
     }
     ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...');
@@ -987,7 +1048,27 @@ function togglePlay() {
     else if (hasAmbient) { startAmbientOnly(); }
     if (hasMusic && (!musicBuffers||musicBuffers.length===0)) {
       state.loadingMusic = true;
-      loadMusicBuffers(state.currentMusicId).then(bufs => { musicBuffers = bufs; state.loadingMusic = false; updateTrackStates(); startMusicOnly(); }).catch(() => { state.loadingMusic = false; });
+      const progBar = document.getElementById('musicLoadBar');
+      const progLabel = document.getElementById('musicLoadLabel');
+      const progFill = document.getElementById('musicLoadFill');
+      const progText = document.getElementById('musicLoadText');
+      progBar.style.display = 'block';
+      progLabel.style.display = 'block';
+      progFill.style.width = '0%';
+      progText.textContent = '0/?';
+      loadMusicBuffers(state.currentMusicId, (done, total) => {
+        const pct = total > 0 ? Math.round(done / total * 100) : 0;
+        progFill.style.width = pct + '%';
+        progText.textContent = done + '/' + total;
+      }).then(bufs => {
+        musicBuffers = bufs; state.loadingMusic = false; updateTrackStates();
+        progFill.style.width = '100%';
+        setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1200);
+        startMusicOnly();
+      }).catch(() => {
+        state.loadingMusic = false;
+        progBar.style.display = 'none'; progLabel.style.display = 'none';
+      });
     }
     else if (hasMusic) { startMusicOnly(); }
     if (hasAmbient) state.ambientPlaying = true;
