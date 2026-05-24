@@ -287,17 +287,30 @@ body {
    ============================================================ */
 #musicLoadBar {
   display: none;
-  height: 6px; background: var(--border2); border-radius: 3px;
-  margin: 6px 0 2px; overflow: hidden;
+  position: relative;
+  height: 12px; background: var(--border2); border-radius: 6px;
+  margin: 8px 0 4px; overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
 }
 #musicLoadBar .fill {
-  height: 100%; background: var(--music-accent); border-radius: 3px;
+  height: 100%; border-radius: 6px;
   width: 0%; transition: width 0.3s ease;
-  background-image: linear-gradient(90deg, var(--music-accent) 0%, var(--music-border) 100%);
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%);
+  background-size: 200% 100%;
+  animation: loadShimmer 2s ease-in-out infinite;
+}
+@keyframes loadShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+#musicLoadBar .pct {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-size: 9px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  z-index: 2; letter-spacing: 0.5px;
 }
 #musicLoadLabel {
   display: none;
-  font-size: 11px; color: var(--text2); text-align: center; margin-bottom: 2px;
+  font-size: 12px; font-weight: 600; color: var(--music-accent); text-align: center; margin-bottom: 4px;
 }
 
 /* ============================================================
@@ -510,7 +523,7 @@ body {
         <option value="solo">独奏</option>
       </select>
     </div>
-    <!-- 8个聆听功效选择 -->
+    <!-- 8个频率功效选择（环境音EQ） -->
     <div class="preset-grid" id="ambientPresets">
       <button onclick="applyPreset('amb_focus')">🎯 专注</button>
       <button onclick="applyPreset('amb_meditate')">🧘 冥想</button>
@@ -543,10 +556,10 @@ body {
     <div class="tag-row music-tags" id="musicTags"></div>
     <!-- 加载进度条 -->
     <div id="musicLoadLabel">⏳ 加载分轨中... <span id="musicLoadText">0/0</span></div>
-    <div id="musicLoadBar"><div class="fill" id="musicLoadFill"></div></div>
+    <div id="musicLoadBar"><div class="fill" id="musicLoadFill"></div><span class="pct" id="musicLoadPct"></span></div>
     <!-- 12路横向滑块 -->
     <div class="track-list" id="musicSliders"></div>
-    <!-- 8个聆听效果选择 -->
+    <!-- 8个混音风格选择（音乐分轨） -->
     <div class="preset-grid" id="musicPresets">
       <button onclick="applyPreset('mus_default')">🎹 默认</button>
       <button onclick="applyPreset('mus_soft')">🌸 轻柔</button>
@@ -944,25 +957,29 @@ async function selectMusic(id) {
   const progLabel = document.getElementById('musicLoadLabel');
   const progFill = document.getElementById('musicLoadFill');
   const progText = document.getElementById('musicLoadText');
+  const progPct = document.getElementById('musicLoadPct');
   progBar.style.display = 'block';
   progLabel.style.display = 'block';
   progFill.style.width = '0%';
   progText.textContent = '0/?';
+  progPct.textContent = '';
   setStatus('⏳ 加载分轨中...');
   try {
     musicBuffers = await loadMusicBuffers(id, (done, total) => {
       const pct = total > 0 ? Math.round(done / total * 100) : 0;
       progFill.style.width = pct + '%';
       progText.textContent = done + '/' + total;
+      progPct.textContent = pct + '%';
       setStatus(`⏳ 加载分轨中... ${done}/${total}`);
     });
     updateTrackStates();
     const loaded = musicBuffers.filter(b => b).length;
     progFill.style.width = '100%';
     progText.textContent = loaded + '/' + loaded + ' ✓';
+    progPct.textContent = '100% ✓';
     setStatus(`曲目加载完成（${loaded}/12路可用）`);
-    // 1秒后自动隐藏进度条
-    setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1200);
+    // 1.5秒后自动隐藏进度条
+    setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1500);
   } catch(e) {
     musicBuffers = [];
     progBar.style.display = 'none';
@@ -1014,18 +1031,22 @@ function toggleMusicPlay() {
       const progLabel = document.getElementById('musicLoadLabel');
       const progFill = document.getElementById('musicLoadFill');
       const progText = document.getElementById('musicLoadText');
+      const progPct = document.getElementById('musicLoadPct');
       progBar.style.display = 'block';
       progLabel.style.display = 'block';
       progFill.style.width = '0%';
       progText.textContent = '0/?';
+      progPct.textContent = '';
       loadMusicBuffers(state.currentMusicId, (done, total) => {
         const pct = total > 0 ? Math.round(done / total * 100) : 0;
         progFill.style.width = pct + '%';
         progText.textContent = done + '/' + total;
+        progPct.textContent = pct + '%';
       }).then(bufs => {
         musicBuffers = bufs; state.loadingMusic = false; updateTrackStates();
         progFill.style.width = '100%';
-        setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1200);
+        progPct.textContent = '100% ✓';
+        setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1500);
         startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...');
       }).catch(() => {
         state.loadingMusic = false;
@@ -1058,18 +1079,22 @@ function togglePlay() {
       const progLabel = document.getElementById('musicLoadLabel');
       const progFill = document.getElementById('musicLoadFill');
       const progText = document.getElementById('musicLoadText');
+      const progPct = document.getElementById('musicLoadPct');
       progBar.style.display = 'block';
       progLabel.style.display = 'block';
       progFill.style.width = '0%';
       progText.textContent = '0/?';
+      progPct.textContent = '';
       loadMusicBuffers(state.currentMusicId, (done, total) => {
         const pct = total > 0 ? Math.round(done / total * 100) : 0;
         progFill.style.width = pct + '%';
         progText.textContent = done + '/' + total;
+        progPct.textContent = pct + '%';
       }).then(bufs => {
         musicBuffers = bufs; state.loadingMusic = false; updateTrackStates();
         progFill.style.width = '100%';
-        setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1200);
+        progPct.textContent = '100% ✓';
+        setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1500);
         startMusicOnly();
       }).catch(() => {
         state.loadingMusic = false;
@@ -1179,7 +1204,7 @@ function applyPreset(name) {
     if (ambBtn) ambBtn.classList.add('active');
   }
   if (p.music) {
-    // 音乐预设：设置8路音量滑块
+    // 音乐预设：设置12路音量滑块
     p.music.forEach((v, i) => { const input = document.querySelector(`input[data-ch="${i}"]`); if (input) { input.value = v; document.getElementById('musicVal'+i).textContent = v; } });
     remapAllMusicGains();
     // 高亮当前预设按钮
