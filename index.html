@@ -450,7 +450,7 @@ body {
 <!-- ======= 顶部栏 ======= -->
 <div class="header">
   <div class="logo">🎵 纳心音乐播放器</div>
-  <div class="brand">Naxin Player v1.6</div>
+  <div class="brand">Naxin Player v1.7</div>
   <div class="spacer"></div>
   <div class="theme-switch">
     <button onclick="setTheme('forest')" class="active" id="themeForest" title="森林绿">🌿</button>
@@ -765,8 +765,10 @@ function generateDemoNoise(dur) {
 }
 
 // ============================================================
-//  环境音（MP3录音 → 10段BiquadFilter切分）
+//  环境音（10段串联Peaking滤波器 — 真正图形均衡器）
 // ============================================================
+// 架构：源 → Peaking(32Hz) → Peaking(64Hz) → ... → Peaking(16kHz) → 输出
+// 滑块0=最大削减(-40dB)，50=零影响，100=最大增强(+40dB)
 async function loadAmbientBuffer(id) {
   const data = await dbGet('ambient_files', id);  // 返回服务器上的原始音频ArrayBuffer
   if (!data || data.byteLength === 0) return null;
@@ -791,28 +793,47 @@ function startAmbient() {
   stopAmbient();
   if (!ambientBuffer || !state.ambientOn) return;
   ambientFilters = [];
+  
+  // 构建串联链：每个peaking滤波器输出连到下一个
+  let prevNode = null;
   const src = audioCtx.createBufferSource();
   src.buffer = ambientBuffer; src.loop = state.loop;
+  
   EQ10_BANDS.forEach((band, i) => {
     const filter = audioCtx.createBiquadFilter();
-    filter.type = 'bandpass'; filter.frequency.value = band.freq; filter.Q.value = 1.0;
-    const gain = audioCtx.createGain();
+    filter.type = 'peaking';
+    filter.frequency.value = band.freq;
+    filter.Q.value = 1.0;
     const slider = document.querySelector(`input[data-eq="${i}"]`);
-    gain.gain.value = slider ? parseInt(slider.value) / 100 : 0.5;
-    src.connect(filter); filter.connect(gain).connect(masterGain);
-    ambientFilters.push({ filter, gainNode: gain });
+    const sliderVal = slider ? parseInt(slider.value) : 50;
+    // 映射 0-100 → -40dB ~ +40dB（50=0dB中心）
+    filter.gain.value = (sliderVal - 50) * 0.8;
+    
+    if (i === 0) {
+      src.connect(filter);
+    } else {
+      prevNode.connect(filter);
+    }
+    prevNode = filter;
+    ambientFilters.push({ filter });
   });
+  
+  // 最后一环连接到输出
+  if (prevNode) prevNode.connect(masterGain);
+  else src.connect(masterGain);
+  
   src.start(0);
   ambientSource = src;
 }
 function stopAmbient() { try { ambientSource && ambientSource.stop(); } catch(e) {} ambientSource = null; ambientFilters = []; }
 function restartAmbient() { stopAmbient(); if (state.ambientOn && ambientBuffer) startAmbient(); }
 function setAmbientBand(i, val) {
-  const v = val / 100;
+  const v = parseInt(val);
   const labelEl = document.getElementById('eqVal' + i);
-  if (labelEl) labelEl.textContent = val;
-  if (ambientFilters[i] && ambientFilters[i].gainNode)
-    ambientFilters[i].gainNode.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
+  if (labelEl) labelEl.textContent = v;
+  // peaking滤波器：0=-40dB, 50=0dB, 100=+40dB
+  if (ambientFilters[i] && ambientFilters[i].filter)
+    ambientFilters[i].filter.gain.setTargetAtTime((v - 50) * 0.8, audioCtx.currentTime, 0.05);
 }
 function toggleAmbient() {
   state.ambientOn = !state.ambientOn;
@@ -990,15 +1011,16 @@ function setAnimMode(v) { state.animMode = v; if (state.ambientPlaying || state.
 //  8+8 预设系统
 // ============================================================
 const PRESETS = {
-  // 环境音预设（10段EQ值）
-  amb_focus:     { eq: [20,30,40,50,80,70,60,50,30,20] },
-  amb_meditate:  { eq: [50,60,70,65,55,50,45,40,35,40] },
-  amb_sleep:     { eq: [70,65,55,45,35,30,25,20,15,20] },
-  amb_read:      { eq: [30,40,60,70,65,55,45,35,25,20] },
-  amb_relax:     { eq: [40,50,65,70,60,55,50,45,40,35] },
-  amb_forest:    { eq: [60,65,70,55,50,60,55,45,35,30] },
-  amb_rain:      { eq: [25,30,40,60,65,55,45,35,25,20] },
-  amb_ocean_p:   { eq: [90,80,70,60,50,45,40,35,40,45] },
+  // 环境音预设（10段peaking值：0=-40dB, 50=零影响, 100=+40dB）
+  amb_default:   { eq: [50,50,50,50,50,50,50,50,50,50] },
+  amb_focus:     { eq: [35,40,45,50,65,60,55,50,40,35] },
+  amb_meditate:  { eq: [50,55,60,58,53,50,48,45,43,45] },
+  amb_sleep:     { eq: [60,58,53,48,43,40,38,35,33,35] },
+  amb_read:      { eq: [40,45,55,60,58,53,48,43,38,35] },
+  amb_relax:     { eq: [45,50,58,60,55,53,50,48,45,43] },
+  amb_forest:    { eq: [55,58,60,53,50,55,53,48,43,40] },
+  amb_rain:      { eq: [38,40,45,55,58,53,48,43,38,35] },
+  amb_ocean_p:   { eq: [70,65,60,55,50,48,45,43,45,48] },
   // 音乐预设（12路音量值）
   mus_default:   { music: [80,60,40,75,55,65,50,45,50,45,35,30] },
   mus_soft:      { music: [50,40,35,50,40,45,35,30,45,35,30,25] },
@@ -1055,7 +1077,7 @@ function setStatus(msg) {
 function buildUI() {
   // 10段竖向均衡器
   const eqRow = document.getElementById('eqVerticalRow');
-  const defaultEQ = [30,40,50,60,70,65,55,45,35,25];
+  const defaultEQ = [50,50,50,50,50,50,50,50,50,50];  // 0=-40dB,50=0dB,100=+40dB
   EQ10_BANDS.forEach((band, i) => {
     const col = document.createElement('div'); col.className = 'eq-vcol';
     col.innerHTML = `
