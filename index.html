@@ -828,7 +828,7 @@ async function selectAmbient(id) {
     ambientBuffer = null;
     setStatus('环境音加载失败: ' + (e.message||'未知错误'));
   }
-  if (state.ambientPlaying) { stopAmbient(); state.ambientPlaying = false; document.getElementById('ambPlayBtn').textContent = '▶'; setStatus('请重新选取场景后播放'); }
+  if (state.ambientPlaying) { stopAmbient(); state.ambientPlaying = false; syncPlayBtn(); setStatus('请重新选取场景后播放'); }
 }
 function startAmbient() {
   stopAmbient();
@@ -879,20 +879,20 @@ function setAmbientBand(i, val) {
 function toggleAmbient() {
   state.ambientOn = !state.ambientOn;
   document.getElementById('ambientSwitch').classList.toggle('on', state.ambientOn);
-  if (!state.ambientOn) { stopAmbient(); state.ambientPlaying = false; document.getElementById('ambPlayBtn').textContent = '▶'; }
+  if (!state.ambientOn) { stopAmbient(); state.ambientPlaying = false; syncPlayBtn(); }
   else if (state.ambientPlaying) startAmbient();
 }
 function toggleAmbientPlay() {
-  if (state.ambientPlaying) { stopAmbient(); state.ambientPlaying = false; document.getElementById('ambPlayBtn').textContent = '▶'; setStatus('环境音已暂停'); }
+  if (state.ambientPlaying) { stopAmbient(); state.ambientPlaying = false; syncPlayBtn(); setStatus('环境音已暂停'); }
   else if (state.ambientOn) {
     if (!ambientBuffer && !state.currentAmbientId) { setStatus('⚠ 请先选取环境音场景再播放'); return; }
     if (!ambientBuffer) {
       // 有选中ID但buffer未加载，异步加载后播放
       ensureAudioCtx();
-      loadAmbientBuffer(state.currentAmbientId).then(buf => { ambientBuffer = buf; startAmbientOnly(); state.ambientPlaying = true; document.getElementById('ambPlayBtn').textContent = '⏸'; setStatus('环境音播放中...'); }).catch(() => setStatus('⚠ 环境音加载失败'));
+      loadAmbientBuffer(state.currentAmbientId).then(buf => { ambientBuffer = buf; startAmbientOnly(); state.ambientPlaying = true; syncPlayBtn(); setStatus('环境音播放中...'); }).catch(() => setStatus('⚠ 环境音加载失败'));
       return;
     }
-    ensureAudioCtx(); startAmbientOnly(); state.ambientPlaying = true; document.getElementById('ambPlayBtn').textContent = '⏸'; setStatus('环境音播放中...');
+    ensureAudioCtx(); startAmbientOnly(); state.ambientPlaying = true; syncPlayBtn(); setStatus('环境音播放中...');
   }
 }
 
@@ -950,7 +950,7 @@ async function selectMusic(id) {
   musicBuffers = []; // 先清空，防止旧buffer被误用
   updateTrackStates();
   document.querySelectorAll('#musicTags button').forEach(b => b.classList.toggle('active', b.dataset.id === id));
-  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; }
+  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; syncPlayBtn(); }
   state.loadingMusic = true;
   // 显示进度条
   const progBar = document.getElementById('musicLoadBar');
@@ -1016,11 +1016,11 @@ function setMusicGain(ch, val) {
 function toggleMusic() {
   state.musicOn = !state.musicOn;
   document.getElementById('musicSwitch').classList.toggle('on', state.musicOn);
-  if (!state.musicOn) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; }
+  if (!state.musicOn) { stopMusic(); state.musicPlaying = false; syncPlayBtn(); }
   else if (state.musicPlaying) startMusic();
 }
 function toggleMusicPlay() {
-  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; setStatus('音乐已暂停'); }
+  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; syncPlayBtn(); setStatus('音乐已暂停'); }
   else if (state.musicOn) {
     if (state.loadingMusic) { setStatus('⏳ 分轨加载中，请稍候再播...'); return; }
     if ((!musicBuffers || musicBuffers.length === 0) && !state.currentMusicId) { setStatus('⚠ 请先选取音乐曲目再播放'); return; }
@@ -1047,7 +1047,7 @@ function toggleMusicPlay() {
         progFill.style.width = '100%';
         progPct.textContent = '100% ✓';
         setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1500);
-        startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...');
+        startMusicOnly(); state.musicPlaying = true; syncPlayBtn(); setStatus('音乐播放中...');
       }).catch(() => {
         state.loadingMusic = false;
         progBar.style.display = 'none'; progLabel.style.display = 'none';
@@ -1055,16 +1055,23 @@ function toggleMusicPlay() {
       });
       return;
     }
-    ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...');
+    ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; syncPlayBtn(); setStatus('音乐播放中...');
   }
 }
 
 // ============================================================
 //  播放控制
 // ============================================================
+// 三键联动：根据两个均衡器的播放状态，统一更新总键+分键
+function syncPlayBtn() {
+  const anyPlaying = state.ambientPlaying || state.musicPlaying;
+  document.getElementById('playBtn').textContent = anyPlaying ? '⏸' : '▶';
+  document.getElementById('ambPlayBtn').textContent = state.ambientPlaying ? '⏸' : '▶';
+  document.getElementById('musPlayBtn').textContent = state.musicPlaying ? '⏸' : '▶';
+}
 function togglePlay() {
   const anyPlaying = state.ambientPlaying || state.musicPlaying;
-  if (anyPlaying) { stopAll(); state.ambientPlaying = false; state.musicPlaying = false; document.getElementById('playBtn').textContent = '▶'; document.getElementById('ambPlayBtn').textContent = '▶'; document.getElementById('musPlayBtn').textContent = '▶'; setStatus('全部停止'); }
+  if (anyPlaying) { stopAll(); state.ambientPlaying = false; state.musicPlaying = false; syncPlayBtn(); setStatus('全部停止'); }
   else {
     const hasAmbient = ambientBuffer || state.currentAmbientId;
     const hasMusic = (musicBuffers && musicBuffers.length > 0) || state.currentMusicId;
@@ -1104,9 +1111,7 @@ function togglePlay() {
     else if (hasMusic) { startMusicOnly(); }
     if (hasAmbient) state.ambientPlaying = true;
     if (hasMusic) state.musicPlaying = true;
-    document.getElementById('playBtn').textContent = '⏸';
-    if (hasAmbient) document.getElementById('ambPlayBtn').textContent = '⏸';
-    if (hasMusic) document.getElementById('musPlayBtn').textContent = '⏸';
+    syncPlayBtn();
     setStatus('全部播放中...');
   }
 }
@@ -1391,7 +1396,7 @@ async function clearAllData() {
   if (!confirm('再次确认：清空所有环境音、音乐文件和配置？')) return;
   await dbClear('ambient_files'); await dbClear('music_files');
   stopAll(); state.ambientPlaying = false; state.musicPlaying = false; state.currentAmbientId = null; state.currentMusicId = null;
-  ambientBuffer = null; musicBuffers = []; document.getElementById('playBtn').textContent = '▶'; document.getElementById('ambPlayBtn').textContent = '▶'; document.getElementById('musPlayBtn').textContent = '▶';
+  ambientBuffer = null; musicBuffers = []; syncPlayBtn();
   updateTrackStates();
   await refreshAllTags(); await refreshAdminLists(); updateDBUsage(); setStatus('全部数据已清空');
 }
