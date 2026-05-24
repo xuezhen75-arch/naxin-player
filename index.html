@@ -1166,9 +1166,9 @@ async function init() {
   if (ambients.length > 0) await selectAmbient(ambients[0].id);
   else { setStatus('就绪 — 请通过 ⚙ 后台上传素材后播放'); }
   const musics = await dbGetAll('music_files');
-  if (musics.length>0) await selectMusic(musics[0].id);
-  else { ensureAudioCtx(); musicBuffers = Array.from({length:8},()=>generateDemoNoise(60)); }
-  setStatus('就绪 — 点击播放开始');
+  if (musics.length > 0) await selectMusic(musics[0].id);
+  if (!ambientBuffer && !(musicBuffers && musicBuffers.length > 0)) setStatus('就绪 — 请通过 ⚙ 后台上传素材后播放');
+  else setStatus('就绪');
 }
 
 // 预留音谋加H5对接接口
