@@ -309,6 +309,12 @@ body {
   font-size: 12px; color: var(--music-accent); font-weight: 600;
   width: 36px; text-align: center; flex-shrink: 0;
 }
+/* 空轨 — 灰色不可用 */
+.track-row.empty { opacity: 0.35; pointer-events: none; }
+.track-row.empty .track-label { color: #aaa; }
+.track-row.empty .track-val { color: #aaa; }
+.track-row.empty input[type=range] { background: #e0e0e0; }
+.track-row.empty input[type=range]::-webkit-slider-thumb { background: #ccc; }
 
 /* ============================================================
    8个功效/聆听预设按钮（每个面板下面）
@@ -444,7 +450,7 @@ body {
 <!-- ======= 顶部栏 ======= -->
 <div class="header">
   <div class="logo">🎵 纳心音乐播放器</div>
-  <div class="brand">Naxin Player v1.5</div>
+  <div class="brand">Naxin Player v1.5.1</div>
   <div class="spacer"></div>
   <div class="theme-switch">
     <button onclick="setTheme('forest')" class="active" id="themeForest" title="森林绿">🌿</button>
@@ -802,7 +808,21 @@ async function loadMusicBuffers(id) {
   for (let i = 0; i < rec.channels.length; i++) {
     try { bufs.push(await audioCtx.decodeAudioData(rec.channels[i].slice(0))); } catch { bufs.push(null); }
   }
+  // 补齐到12路，空位填null
+  while (bufs.length < 12) bufs.push(null);
   return bufs;
+}
+// 更新12轨UI状态：有空音频数据=亮，无=灰
+function updateTrackStates() {
+  for (let i = 0; i < 12; i++) {
+    const row = document.getElementById('trackRow' + i);
+    if (!row) continue;
+    if (musicBuffers[i]) {
+      row.classList.remove('empty');
+    } else {
+      row.classList.add('empty');
+    }
+  }
 }
 async function selectMusic(id) {
   if (state.currentMusicId === id) return;
@@ -811,6 +831,7 @@ async function selectMusic(id) {
   document.querySelectorAll('#musicTags button').forEach(b => b.classList.toggle('active', b.dataset.id === id));
   try {
     musicBuffers = await loadMusicBuffers(id);
+    updateTrackStates();
     setStatus(`曲目加载完成（${musicBuffers.filter(b=>b).length}/12路）`);
   } catch(e) {
     musicBuffers = [];
@@ -1004,7 +1025,7 @@ function buildUI() {
   const musicSliders = document.getElementById('musicSliders');
   const defaultMus = [80,60,40,75,55,65,50,45,60,55,40,35];
   for (let i = 0; i < 12; i++) {
-    const row = document.createElement('div'); row.className = 'track-row';
+    const row = document.createElement('div'); row.className = 'track-row'; row.id = 'trackRow' + i;
     row.innerHTML = `
       <div class="track-label">第${i+1}路</div>
       <input type="range" min="0" max="100" value="${defaultMus[i]}" data-ch="${i}" oninput="setMusicGain(${i}, this.value)">
@@ -1121,7 +1142,7 @@ async function deleteAmbient(id) {
 async function deleteMusic(id) {
   if (!confirm('确定删除？')) return;
   await dbDelete('music_files', id);
-  if (state.currentMusicId===id) { state.currentMusicId=null; stopMusic(); musicBuffers=[]; }
+  if (state.currentMusicId===id) { state.currentMusicId=null; stopMusic(); musicBuffers=[]; updateTrackStates(); }
   await refreshMusicTags(); await refreshMusicFiles(); updateDBUsage();
 }
 async function updateDBUsage() {
@@ -1142,6 +1163,7 @@ async function clearAllData() {
   await dbClear('ambient_files'); await dbClear('music_files');
   stopAll(); state.ambientPlaying = false; state.musicPlaying = false; state.currentAmbientId = null; state.currentMusicId = null;
   ambientBuffer = null; musicBuffers = []; document.getElementById('playBtn').textContent = '▶'; document.getElementById('ambPlayBtn').textContent = '▶'; document.getElementById('musPlayBtn').textContent = '▶';
+  updateTrackStates();
   await refreshAllTags(); await refreshAdminLists(); updateDBUsage(); setStatus('全部数据已清空');
 }
 async function exportConfig() {
@@ -1169,6 +1191,7 @@ async function init() {
   if (musics.length > 0) await selectMusic(musics[0].id);
   if (!ambientBuffer && !(musicBuffers && musicBuffers.length > 0)) setStatus('就绪 — 请通过 ⚙ 后台上传素材后播放');
   else setStatus('就绪');
+  updateTrackStates();
 }
 
 // 预留音谋加H5对接接口
