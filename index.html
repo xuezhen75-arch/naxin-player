@@ -143,11 +143,49 @@ body {
   transition: background 0.3s, border-color 0.3s;
 }
 .panel-header {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
 }
 .panel-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 5px; }
 .panel-title .icon { font-size: 16px; }
 .panel-subtitle { font-size: 10px; color: var(--text2); font-weight: 400; margin-left: 2px; }
+.panel-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.btn-play-small {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent); color: #fff; border: none;
+  font-size: 14px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s;
+}
+.btn-play-small.music { background: var(--music-accent); }
+.btn-play-small:active { transform: scale(0.9); }
+.btn-select-sm {
+  background: var(--bg-card2); border: 1px solid var(--border); color: var(--text3);
+  border-radius: 14px; padding: 4px 10px; font-size: 11px; cursor: pointer;
+  white-space: nowrap; transition: 0.15s; flex-shrink: 0;
+}
+.btn-select-sm:active { background: var(--border2); transform: scale(0.95); }
+.select-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 150;
+  align-items: flex-end; justify-content: center;
+}
+.select-overlay.show { display: flex; }
+.select-sheet {
+  background: var(--bg-card); border-radius: 16px 16px 0 0;
+  width: 100%; max-width: 540px; max-height: 55vh; overflow-y: auto;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15); padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+.select-sheet h4 { font-size: 14px; margin-bottom: 10px; color: var(--text); }
+.select-sheet .item {
+  display: flex; align-items: center; gap: 8px; padding: 10px 8px;
+  border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text);
+  border-bottom: 1px solid var(--border2); transition: 0.15s;
+}
+.select-sheet .item:hover, .select-sheet .item:active { background: var(--bg-card2); }
+.select-sheet .item.active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.select-sheet .close-sheet {
+  float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text2);
+}
+.select-sheet .empty-hint { font-size: 12px; color: var(--text2); text-align: center; padding: 20px 0; }
 
 .toggle-switch {
   width: 40px; height: 22px; border-radius: 11px; background: var(--switch-off);
@@ -426,7 +464,11 @@ body {
         <span class="icon">🌿</span> 环境音均衡调节
         <span class="panel-subtitle">— 10段 · 频率选择</span>
       </div>
-      <div class="toggle-switch on" id="ambientSwitch" onclick="toggleAmbient()"></div>
+      <div class="panel-actions">
+        <button class="btn-select-sm" onclick="showAmbientPicker()">📂 选取</button>
+        <button class="btn-play-small" id="ambPlayBtn" onclick="toggleAmbientPlay()">▶</button>
+        <div class="toggle-switch on" id="ambientSwitch" onclick="toggleAmbient()"></div>
+      </div>
     </div>
     <!-- 场景标签 -->
     <div class="tag-row" id="ambientTags"></div>
@@ -464,7 +506,11 @@ body {
         <span class="icon">🎹</span> 音乐分轨
         <span class="panel-subtitle">— 8路独立控制</span>
       </div>
-      <div class="toggle-switch on" id="musicSwitch" onclick="toggleMusic()"></div>
+      <div class="panel-actions">
+        <button class="btn-select-sm" onclick="showMusicPicker()">📂 选取</button>
+        <button class="btn-play-small music" id="musPlayBtn" onclick="toggleMusicPlay()">▶</button>
+        <div class="toggle-switch on" id="musicSwitch" onclick="toggleMusic()"></div>
+      </div>
     </div>
     <!-- 曲目标签 -->
     <div class="tag-row music-tags" id="musicTags"></div>
@@ -495,6 +541,26 @@ body {
   </div>
   <span class="status-text" id="statusInfo">就绪</span>
   <button class="btn-small" onclick="toggleLoop()" id="loopBtn">🔁 循环</button>
+</div>
+
+<!-- ======= 选取弹窗 ======= -->
+<div class="select-overlay" id="ambientPickerOverlay">
+  <div class="select-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h4 style="margin:0;">🌿 选择环境音场景</h4>
+      <button class="close-sheet" onclick="closePicker('ambient')">✕</button>
+    </div>
+    <div id="ambientPickerList"><div class="empty-hint">暂无场景，请通过管理后台上传</div></div>
+  </div>
+</div>
+<div class="select-overlay" id="musicPickerOverlay">
+  <div class="select-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h4 style="margin:0;">🎹 选择音乐曲目</h4>
+      <button class="close-sheet" onclick="closePicker('music')">✕</button>
+    </div>
+    <div id="musicPickerList"><div class="empty-hint">暂无曲目，请通过管理后台上传</div></div>
+  </div>
 </div>
 
 <!-- ======= 后台管理面板 ======= -->
@@ -587,7 +653,7 @@ function dbClear(s) { return new Promise((r, j) => { const tx = db.transaction(s
 //  全局状态
 // ============================================================
 const state = {
-  playing: false, masterVol: 0.75, ambientOn: true, musicOn: true, loop: true,
+  ambientPlaying: false, musicPlaying: false, masterVol: 0.75, ambientOn: true, musicOn: true, loop: true,
   animSpeed: 1, animMode: 'soft', currentAmbientId: null, currentMusicId: null,
 };
 const EQ10_BANDS = [
@@ -675,7 +741,7 @@ async function selectAmbient(id) {
     ambientBuffer = generateDemoNoise(60);
     setStatus('已加载演示噪声');
   }
-  if (state.playing) restartAmbient();
+  if (state.ambientPlaying) restartAmbient();
 }
 function startAmbient() {
   stopAmbient();
@@ -701,15 +767,20 @@ function setAmbientBand(i, val) {
   const v = val / 100;
   const labelEl = document.getElementById('eqVal' + i);
   if (labelEl) labelEl.textContent = val;
-  // 首次滑动滑块 → 自动开始播放（解决"没按播放听不到"的问题）
-  if (!state.playing) { ensureAudioCtx(); startAll(); state.playing = true; document.getElementById('playBtn').textContent = '⏸'; }
+  // 首次滑动 → 自动播放环境音
+  if (!state.ambientPlaying) { ensureAudioCtx(); startAmbientOnly(); state.ambientPlaying = true; document.getElementById('ambPlayBtn').textContent = '⏸'; }
   if (ambientFilters[i] && ambientFilters[i].gainNode)
     ambientFilters[i].gainNode.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
 }
 function toggleAmbient() {
   state.ambientOn = !state.ambientOn;
   document.getElementById('ambientSwitch').classList.toggle('on', state.ambientOn);
-  if (!state.ambientOn) stopAmbient(); else if (state.playing) startAmbient();
+  if (!state.ambientOn) { stopAmbient(); state.ambientPlaying = false; document.getElementById('ambPlayBtn').textContent = '▶'; }
+  else if (state.ambientPlaying) startAmbient();
+}
+function toggleAmbientPlay() {
+  if (state.ambientPlaying) { stopAmbient(); state.ambientPlaying = false; document.getElementById('ambPlayBtn').textContent = '▶'; setStatus('环境音已暂停'); }
+  else if (state.ambientOn) { ensureAudioCtx(); startAmbientOnly(); state.ambientPlaying = true; document.getElementById('ambPlayBtn').textContent = '⏸'; setStatus('环境音播放中...'); }
 }
 
 // ============================================================
@@ -737,7 +808,7 @@ async function selectMusic(id) {
     musicBuffers = Array.from({length:8}, () => generateDemoNoise(60));
     setStatus('已加载演示音频');
   }
-  if (state.playing) restartMusic();
+  if (state.musicPlaying) restartMusic();
 }
 function startMusic() {
   stopMusic();
@@ -761,30 +832,38 @@ function setMusicGain(ch, val) {
   const v = val / 100;
   const labelEl = document.getElementById('musicVal' + ch);
   if (labelEl) labelEl.textContent = val;
-  // 首次滑动滑块 → 自动开始播放
-  if (!state.playing) { ensureAudioCtx(); startAll(); state.playing = true; document.getElementById('playBtn').textContent = '⏸'; }
+  // 首次滑动 → 自动播放音乐
+  if (!state.musicPlaying) { ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; }
   const src = musicSources.find(s => s.ch === ch);
   if (src && src.gainNode) src.gainNode.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
 }
 function toggleMusic() {
   state.musicOn = !state.musicOn;
   document.getElementById('musicSwitch').classList.toggle('on', state.musicOn);
-  if (!state.musicOn) stopMusic(); else if (state.playing) startMusic();
+  if (!state.musicOn) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; }
+  else if (state.musicPlaying) startMusic();
+}
+function toggleMusicPlay() {
+  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; document.getElementById('musPlayBtn').textContent = '▶'; setStatus('音乐已暂停'); }
+  else if (state.musicOn) { ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('音乐播放中...'); }
 }
 
 // ============================================================
 //  播放控制
 // ============================================================
 function togglePlay() {
-  if (state.playing) { stopAll(); state.playing = false; document.getElementById('playBtn').textContent = '▶'; setStatus('已停止'); }
-  else { ensureAudioCtx(); startAll(); state.playing = true; document.getElementById('playBtn').textContent = '⏸'; setStatus('播放中...'); }
+  const anyPlaying = state.ambientPlaying || state.musicPlaying;
+  if (anyPlaying) { stopAll(); state.ambientPlaying = false; state.musicPlaying = false; document.getElementById('playBtn').textContent = '▶'; document.getElementById('ambPlayBtn').textContent = '▶'; document.getElementById('musPlayBtn').textContent = '▶'; setStatus('全部停止'); }
+  else { ensureAudioCtx(); startAll(); state.ambientPlaying = true; state.musicPlaying = true; document.getElementById('playBtn').textContent = '⏸'; document.getElementById('ambPlayBtn').textContent = '⏸'; document.getElementById('musPlayBtn').textContent = '⏸'; setStatus('全部播放中...'); }
 }
-function startAll() { if (state.ambientOn && ambientBuffer) startAmbient(); if (state.musicOn && musicBuffers.length > 0) startMusic(); startAnimation(); }
+function startAll() { startAmbientOnly(); startMusicOnly(); }
+function startAmbientOnly() { if (state.ambientOn && ambientBuffer) startAmbient(); startAnimation(); }
+function startMusicOnly() { if (state.musicOn && musicBuffers.length > 0) startMusic(); }
 function stopAll() { stopAmbient(); stopMusic(); stopAnimation(); }
 function toggleLoop() {
   state.loop = !state.loop;
   document.getElementById('loopBtn').textContent = state.loop ? '🔁 循环' : '🔂 单次';
-  if (state.playing) { stopAll(); startAll(); }
+  if (state.ambientPlaying || state.musicPlaying) { stopAll(); if (state.ambientPlaying) startAmbientOnly(); if (state.musicPlaying) startMusicOnly(); }
 }
 
 // ============================================================
@@ -795,7 +874,7 @@ function startAnimation() {
   if (state.animSpeed <= 0) return;
   const iv = Math.max(100, 2000 / state.animSpeed);
   animInterval = setInterval(() => {
-    if (!state.playing) return;
+    if (!state.ambientPlaying && !state.musicPlaying) return;
     ambientFilters.forEach((nf, i) => {
       if (!nf || !nf.gainNode) return;
       const slider = document.querySelector(`input[data-eq="${i}"]`);
@@ -809,8 +888,8 @@ function startAnimation() {
   }, iv);
 }
 function stopAnimation() { if (animInterval) clearInterval(animInterval); animInterval = null; }
-function setAnimSpeed(v) { state.animSpeed = parseFloat(v); document.getElementById('animSpeedLabel').textContent = 'x' + v; if (state.playing) startAnimation(); }
-function setAnimMode(v) { state.animMode = v; if (state.playing) startAnimation(); }
+function setAnimSpeed(v) { state.animSpeed = parseFloat(v); document.getElementById('animSpeedLabel').textContent = 'x' + v; if (state.ambientPlaying || state.musicPlaying) startAnimation(); }
+function setAnimMode(v) { state.animMode = v; if (state.ambientPlaying || state.musicPlaying) startAnimation(); }
 
 // ============================================================
 //  8+8 预设系统
@@ -837,9 +916,9 @@ const PRESETS = {
 };
 function applyPreset(name) {
   const p = PRESETS[name]; if (!p) return;
-  // 首次点击预设 → 自动开始播放
-  if (!state.playing) { ensureAudioCtx(); startAll(); state.playing = true; document.getElementById('playBtn').textContent = '⏸'; }
   if (p.eq) {
+    // 首次点击 → 自动播放环境音
+    if (!state.ambientPlaying) { ensureAudioCtx(); startAmbientOnly(); state.ambientPlaying = true; document.getElementById('ambPlayBtn').textContent = '⏸'; }
     // 环境音预设：设置10段EQ滑块
     p.eq.forEach((v, i) => { const input = document.querySelector(`input[data-eq="${i}"]`); if (input) { input.value = v; setAmbientBand(i, v); } });
     // 高亮当前预设按钮
@@ -848,6 +927,8 @@ function applyPreset(name) {
     if (ambBtn) ambBtn.classList.add('active');
   }
   if (p.music) {
+    // 首次点击 → 自动播放音乐
+    if (!state.musicPlaying) { ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; }
     // 音乐预设：设置8路音量滑块
     p.music.forEach((v, i) => { const input = document.querySelector(`input[data-ch="${i}"]`); if (input) { input.value = v; document.getElementById('musicVal'+i).textContent = v; } });
     remapAllMusicGains();
@@ -869,7 +950,12 @@ function remapAllMusicGains() {
 function setStatus(msg) {
   const el = document.getElementById('statusInfo'); el.textContent = msg;
   clearTimeout(el._timeout);
-  el._timeout = setTimeout(() => { el.textContent = state.playing ? '播放中...' : '就绪'; }, 3000);
+  el._timeout = setTimeout(() => {
+    if (state.ambientPlaying && state.musicPlaying) el.textContent = '全部播放中...';
+    else if (state.ambientPlaying) el.textContent = '环境音播放中...';
+    else if (state.musicPlaying) el.textContent = '音乐播放中...';
+    else el.textContent = '就绪';
+  }, 3000);
 }
 
 // ============================================================
@@ -918,6 +1004,39 @@ async function refreshAllTags() {
   document.getElementById('ambientCount').textContent = (await dbGetAll('ambient_files')).length;
   document.getElementById('musicCount').textContent = (await dbGetAll('music_files')).length;
 }
+
+// ============================================================
+//  选取弹窗
+// ============================================================
+async function showAmbientPicker() {
+  const overlay = document.getElementById('ambientPickerOverlay');
+  const list = document.getElementById('ambientPickerList');
+  const files = await dbGetAll('ambient_files');
+  list.innerHTML = files.length === 0
+    ? '<div class="empty-hint">暂无场景，请通过 ⚙ 管理后台上传</div>'
+    : files.map(f => `<div class="item${state.currentAmbientId===f.id?' active':''}" onclick="selectAmbientFromPicker('${f.id}','ambient')">🌿 ${f.name} <small style="color:var(--text2);margin-left:auto;">${f.fileName||''}</small></div>`).join('');
+  overlay.classList.add('show');
+}
+async function showMusicPicker() {
+  const overlay = document.getElementById('musicPickerOverlay');
+  const list = document.getElementById('musicPickerList');
+  const files = await dbGetAll('music_files');
+  list.innerHTML = files.length === 0
+    ? '<div class="empty-hint">暂无曲目，请通过 ⚙ 管理后台上传</div>'
+    : files.map(f => `<div class="item${state.currentMusicId===f.id?' active':''}" onclick="selectMusicFromPicker('${f.id}','music')">🎹 ${f.name} <small style="color:var(--text2);margin-left:auto;">${f.channelCount||f.channels?.length||0}路</small></div>`).join('');
+  overlay.classList.add('show');
+}
+function closePicker(type) { document.getElementById(type+'PickerOverlay').classList.remove('show'); }
+async function selectMusicFromPicker(id, type) {
+  closePicker(type); await selectMusic(id);
+  if (!state.musicPlaying) { ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; document.getElementById('musPlayBtn').textContent = '⏸'; }
+}
+async function selectAmbientFromPicker(id, type) {
+  closePicker(type); await selectAmbient(id);
+  if (!state.ambientPlaying) { ensureAudioCtx(); startAmbientOnly(); state.ambientPlaying = true; document.getElementById('ambPlayBtn').textContent = '⏸'; }
+}
+document.getElementById('ambientPickerOverlay').addEventListener('click', function(e){ if(e.target===this) closePicker('ambient'); });
+document.getElementById('musicPickerOverlay').addEventListener('click', function(e){ if(e.target===this) closePicker('music'); });
 
 // ============================================================
 //  后台管理
@@ -991,8 +1110,8 @@ async function clearAllData() {
   if (!confirm('⚠️ 确定清空全部数据？此操作不可恢复！')) return;
   if (!confirm('再次确认：清空所有环境音、音乐文件和配置？')) return;
   await dbClear('ambient_files'); await dbClear('music_files');
-  stopAll(); state.playing=false; state.currentAmbientId=null; state.currentMusicId=null;
-  ambientBuffer=null; musicBuffers=[]; document.getElementById('playBtn').textContent='▶';
+  stopAll(); state.ambientPlaying = false; state.musicPlaying = false; state.currentAmbientId = null; state.currentMusicId = null;
+  ambientBuffer = null; musicBuffers = []; document.getElementById('playBtn').textContent = '▶'; document.getElementById('ambPlayBtn').textContent = '▶'; document.getElementById('musPlayBtn').textContent = '▶';
   await refreshAllTags(); await refreshAdminLists(); updateDBUsage(); setStatus('全部数据已清空');
 }
 async function exportConfig() {
