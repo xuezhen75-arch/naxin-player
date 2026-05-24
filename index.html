@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>纳心音乐播放器 — Naxin Player</title>
+<style>
+/* ============================================================
+   主题系统：三色
+   ============================================================ */
+:root {
+  --bg: #f5f0eb;
+  --bg-card: #ffffff;
+  --bg-card2: #fafaf7;
+  --text: #2c2c2a;
+  --text2: #888780;
+  --text3: #5c5c56;
+  --border: #d3d1c7;
+  --border2: #e8e6de;
+  --accent: #3d7a5c;
+  --accent2: #5dcaa5;
+  --accent3: #0f6e56;
+  --accent-bg: #e1f5ee;
+  --music-accent: #534ab7;
+  --music-bg: #eeedfe;
+  --music-border: #7f77dd;
+  --slider-track: #d3d1c7;
+  --slider-thumb: #534ab7;
+  --slider-ambi: #5dcaa5;
+  --switch-off: #d3d1c7;
+  --switch-on: #5dcaa5;
+  --topbar-bg: #ffffff;
+  --bottombar-bg: #ffffff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+body.theme-ocean {
+  --bg: #eaf2f8;
+  --bg-card: #ffffff;
+  --bg-card2: #f5f8fb;
+  --text: #1a2740;
+  --text2: #6b8299;
+  --text3: #3d5568;
+  --border: #c4d4e3;
+  --border2: #dde6f0;
+  --accent: #2e6b9e;
+  --accent2: #4d94cc;
+  --accent3: #1a4d7a;
+  --accent-bg: #dceefa;
+  --music-accent: #2e6b9e;
+  --music-bg: #e3eefa;
+  --music-border: #4d94cc;
+  --slider-track: #c4d4e3;
+  --slider-thumb: #2e6b9e;
+  --slider-ambi: #4d94cc;
+  --switch-on: #4d94cc;
+}
+body.theme-warm {
+  --bg: #faf3eb;
+  --bg-card: #ffffff;
+  --bg-card2: #fefaf5;
+  --text: #3d2e1f;
+  --text2: #9e8c78;
+  --text3: #6b5540;
+  --border: #e0d3c0;
+  --border2: #efe6d8;
+  --accent: #c7763a;
+  --accent2: #e8995e;
+  --accent3: #8c4a20;
+  --accent-bg: #fdf0e1;
+  --music-accent: #c7763a;
+  --music-bg: #fdf0e1;
+  --music-border: #e8995e;
+  --slider-track: #e0d3c0;
+  --slider-thumb: #c7763a;
+  --slider-ambi: #e8995e;
+  --switch-on: #e8995e;
+}
+
+/* ============================================================
+   全局
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh; min-height: 100dvh;
+  padding-bottom: 80px;
+  transition: background 0.3s, color 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ============================================================
+   顶部栏
+   ============================================================ */
+.header {
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: 0; z-index: 100;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+.header .logo { font-size: 15px; font-weight: 700; color: var(--accent); white-space: nowrap; letter-spacing: -0.3px; }
+.header .brand { font-size: 11px; color: var(--text2); font-weight: 400; }
+.header .spacer { flex: 1; }
+.header .admin-btn {
+  background: none; border: 1px solid var(--border); color: var(--text2);
+  border-radius: var(--radius-sm); padding: 4px 10px; font-size: 11px; cursor: pointer;
+}
+.header .admin-btn:hover { background: var(--bg-card2); color: var(--text); }
+.theme-switch { display: flex; gap: 4px; background: var(--bg-card2); border-radius: 20px; padding: 2px; border: 1px solid var(--border2); }
+.theme-switch button {
+  width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer;
+  transition: 0.2s; font-size: 13px; display: flex; align-items: center; justify-content: center; background: transparent;
+}
+.theme-switch button.active { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.15); transform: scale(1.1); }
+
+/* ============================================================
+   主体（上下布局，手机优先）
+   ============================================================ */
+.main { padding: 0; max-width: 540px; margin: 0 auto; }
+
+/* ============================================================
+   面板通用
+   ============================================================ */
+.panel {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin: 10px 10px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+  transition: background 0.3s, border-color 0.3s;
+}
+.panel-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.panel-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 5px; }
+.panel-title .icon { font-size: 16px; }
+.panel-subtitle { font-size: 10px; color: var(--text2); font-weight: 400; margin-left: 2px; }
+
+.toggle-switch {
+  width: 40px; height: 22px; border-radius: 11px; background: var(--switch-off);
+  position: relative; cursor: pointer; transition: 0.25s; flex-shrink: 0; margin-left: auto;
+}
+.toggle-switch.on { background: var(--switch-on); }
+.toggle-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  transition: 0.25s; box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.toggle-switch.on::after { left: 20px; }
+
+/* 标签选择 */
+.tag-row {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 2px;
+}
+.tag-row::-webkit-scrollbar { display: none; }
+.tag-row button {
+  background: var(--accent-bg); border: 1px solid var(--accent2); color: var(--accent3);
+  border-radius: 16px; padding: 5px 14px; font-size: 12px; cursor: pointer;
+  white-space: nowrap; transition: 0.2s; flex-shrink: 0;
+}
+.tag-row button.active { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+.tag-row button:active { transform: scale(0.95); }
+.tag-row.music-tags button { background: var(--music-bg); border-color: var(--music-border); color: var(--music-accent); }
+.tag-row.music-tags button.active { background: var(--music-accent); color: #fff; border-color: var(--music-accent); }
+
+/* ============================================================
+   环境音 — 10段竖向均衡器（频率选择）
+   ============================================================ */
+.eq-vertical-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 6px 0 10px;
+  height: 190px;
+  margin-bottom: 6px;
+}
+.eq-vcol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.eq-vcol .v-val {
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 24px;
+  text-align: center;
+}
+.eq-vcol input[type=range] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  -moz-appearance: slider-vertical;
+  width: 24px;
+  height: 130px;
+  background: var(--slider-track);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+.eq-vcol input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--slider-ambi);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.eq-vcol input[type=range]::-webkit-slider-thumb:active { transform: scale(1.15); }
+.eq-vcol .v-freq {
+  font-size: 9px;
+  color: var(--text2);
+  font-weight: 500;
+}
+
+/* 动画行 */
+.anim-row {
+  display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--text2);
+  flex-wrap: wrap; padding: 6px 0 0;
+}
+.anim-row select, .anim-row input[type=range] {
+  font-size: 11px; padding: 3px 6px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-card); color: var(--text); outline: none;
+}
+.anim-row input[type=range] { width: 60px; height: 4px; }
+
+/* ============================================================
+   音乐 — 8路横向滑块
+   ============================================================ */
+.track-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
+.track-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.track-label {
+  font-size: 12px; color: var(--text3); font-weight: 600;
+  width: 38px; text-align: right; flex-shrink: 0;
+}
+.track-row input[type=range] {
+  flex: 1;
+  -webkit-appearance: none; appearance: none;
+  height: 6px; background: var(--slider-track); border-radius: 3px; outline: none; cursor: pointer;
+}
+.track-row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--music-accent); cursor: pointer;
+  border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.track-row input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); }
+.track-val {
+  font-size: 12px; color: var(--music-accent); font-weight: 600;
+  width: 36px; text-align: center; flex-shrink: 0;
+}
+
+/* ============================================================
+   8个功效/聆听预设按钮（每个面板下面）
+   ============================================================ */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+.preset-grid button {
+  background: var(--bg-card2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 7px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text3);
+  transition: 0.2s;
+  white-space: nowrap;
+  text-align: center;
+}
+.preset-grid button.active {
+  background: var(--accent2);
+  color: #fff;
+  border-color: var(--accent2);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.preset-grid button:active {
+  transform: scale(0.95);
+}
+
+/* ============================================================
+   底部控制栏
+   ============================================================ */
+.bottombar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bottombar-bg); border-top: 1px solid var(--border);
+  padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+  z-index: 100; box-shadow: 0 -1px 4px rgba(0,0,0,0.06);
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.btn-play {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--accent); color: #fff; border: none;
+  font-size: 20px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s;
+}
+.btn-play:active { transform: scale(0.92); }
+.master-wrap { flex: 1; display: flex; align-items: center; gap: 6px; max-width: 240px; }
+.master-wrap .label { font-size: 10px; color: var(--text2); white-space: nowrap; }
+.master-wrap input[type=range] {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 4px; background: var(--slider-track); border-radius: 2px; outline: none;
+}
+.master-wrap input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--text); cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.master-wrap .val { font-size: 11px; color: var(--text); font-weight: 600; min-width: 32px; }
+.status-text { font-size: 10px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+.btn-small {
+  background: none; border: 1px solid var(--border); color: var(--text2);
+  border-radius: var(--radius-sm); padding: 3px 8px; font-size: 10px; cursor: pointer; white-space: nowrap;
+}
+.btn-small:active { background: var(--bg-card2); }
+
+/* ============================================================
+   后台管理面板
+   ============================================================ */
+.admin-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200;
+  align-items: center; justify-content: center; padding: 16px;
+}
+.admin-overlay.show { display: flex; }
+.admin-panel {
+  background: var(--bg-card); border-radius: var(--radius);
+  width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2); padding: 20px;
+}
+.admin-panel h3 { font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.admin-panel .close-btn { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text2); }
+.admin-section {
+  margin: 16px 0; padding: 12px; background: var(--bg-card2);
+  border-radius: var(--radius-sm); border: 1px solid var(--border2);
+}
+.admin-section h4 { font-size: 13px; color: var(--text); margin-bottom: 8px; }
+.admin-section label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.admin-section input[type=text],
+.admin-section input[type=file],
+.admin-section select {
+  width: 100%; padding: 6px 10px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-card); color: var(--text); margin-bottom: 8px; outline: none; font-family: inherit;
+}
+.admin-section input[type=file] { padding: 4px; }
+.admin-section .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.admin-section button {
+  padding: 6px 14px; font-size: 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); cursor: pointer; background: var(--bg-card); color: var(--text); transition: 0.2s;
+}
+.admin-section button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.admin-section button.danger { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+.admin-file-list { font-size: 11px; color: var(--text2); max-height: 120px; overflow-y: auto; }
+.admin-file-list div { padding: 3px 0; border-bottom: 1px solid var(--border2); display: flex; justify-content: space-between; align-items: center; }
+.admin-file-list .del { color: #e74c3c; cursor: pointer; font-size: 14px; }
+.password-input {
+  font-size: 16px; text-align: center; letter-spacing: 4px; padding: 10px;
+  border: 2px solid var(--border); border-radius: var(--radius); width: 100%; outline: none; font-family: inherit;
+}
+.login-hint { font-size: 11px; color: var(--text2); text-align: center; margin-top: 8px; }
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (min-width: 600px) {
+  .eq-vertical-row { height: 210px; }
+  .eq-vcol input[type=range] { height: 150px; width: 28px; }
+}
+@media (max-width: 374px) {
+  .eq-vertical-row { height: 160px; gap: 1px; }
+  .eq-vcol input[type=range] { height: 105px; width: 20px; }
+  .eq-vcol .v-freq { font-size: 8px; }
+  .track-label { font-size: 10px; width: 30px; }
+  .preset-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .preset-grid button { font-size: 10px; padding: 5px 4px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ======= 顶部栏 ======= -->
+<div class="header">
+  <div class="logo">🎵 纳心音乐播放器</div>
+  <div class="brand">Naxin Player v1.0</div>
+  <div class="spacer"></div>
+  <div class="theme-switch">
+    <button onclick="setTheme('forest')" class="active" id="themeForest" title="森林绿">🌿</button>
+    <button onclick="setTheme('ocean')" id="themeOcean" title="深海蓝">🌊</button>
+    <button onclick="setTheme('warm')" id="themeWarm" title="暖阳橙">☀️</button>
+  </div>
+  <button class="admin-btn" onclick="showAdminLogin()">⚙ 管理</button>
+</div>
+
+<!-- ======= 主体 ======= -->
+<div class="main">
+
+  <!-- ===== 面板一：环境音均衡调节（10段竖向滑块） ===== -->
+  <div class="panel" id="ambientPanel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon">🌿</span> 环境音均衡调节
+        <span class="panel-subtitle">— 10段 · 频率选择</span>
+      </div>
+      <div class="toggle-switch on" id="ambientSwitch" onclick="toggleAmbient()"></div>
+    </div>
+    <!-- 场景标签 -->
+    <div class="tag-row" id="ambientTags"></div>
+    <!-- 10段竖向均衡器 -->
+    <div class="eq-vertical-row" id="eqVerticalRow"></div>
+    <!-- 动画 -->
+    <div class="anim-row">
+      <span>🎚 波动速度</span>
+      <input type="range" min="0.125" max="8" step="0.125" value="1" id="animSpeed" oninput="setAnimSpeed(this.value)">
+      <span id="animSpeedLabel">x1</span>
+      <span>| 模式</span>
+      <select id="animMode" onchange="setAnimMode(this.value)">
+        <option value="soft">柔波</option>
+        <option value="hard">涌动</option>
+        <option value="solo">独奏</option>
+      </select>
+    </div>
+    <!-- 8个聆听功效选择 -->
+    <div class="preset-grid" id="ambientPresets">
+      <button onclick="applyPreset('amb_focus')">🎯 专注</button>
+      <button onclick="applyPreset('amb_meditate')">🧘 冥想</button>
+      <button onclick="applyPreset('amb_sleep')">🌙 睡眠</button>
+      <button onclick="applyPreset('amb_read')">📖 阅读</button>
+      <button onclick="applyPreset('amb_relax')">💆 放松</button>
+      <button onclick="applyPreset('amb_forest')">🌲 森林</button>
+      <button onclick="applyPreset('amb_rain')">🌧 雨夜</button>
+      <button onclick="applyPreset('amb_ocean_p')">🌊 海浪</button>
+    </div>
+  </div>
+
+  <!-- ===== 面板二：音乐分轨（8路横向滑块） ===== -->
+  <div class="panel" id="musicPanel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon">🎹</span> 音乐分轨
+        <span class="panel-subtitle">— 8路独立控制</span>
+      </div>
+      <div class="toggle-switch on" id="musicSwitch" onclick="toggleMusic()"></div>
+    </div>
+    <!-- 曲目标签 -->
+    <div class="tag-row music-tags" id="musicTags"></div>
+    <!-- 8路横向滑块 -->
+    <div class="track-list" id="musicSliders"></div>
+    <!-- 8个聆听效果选择 -->
+    <div class="preset-grid" id="musicPresets">
+      <button onclick="applyPreset('mus_default')">🎹 默认</button>
+      <button onclick="applyPreset('mus_soft')">🌸 轻柔</button>
+      <button onclick="applyPreset('mus_full')">🔊 饱满</button>
+      <button onclick="applyPreset('mus_sparse')">🍃 疏朗</button>
+      <button onclick="applyPreset('mus_dream')">💫 梦幻</button>
+      <button onclick="applyPreset('mus_classic')">🎻 古典</button>
+      <button onclick="applyPreset('mus_rhythm')">🥁 律动</button>
+      <button onclick="applyPreset('mus_ethereal')">🌌 空灵</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======= 底部控制栏 ======= -->
+<div class="bottombar">
+  <button class="btn-play" id="playBtn" onclick="togglePlay()">▶</button>
+  <div class="master-wrap">
+    <span class="label">总音量</span>
+    <input type="range" min="0" max="100" value="75" id="masterVol" oninput="setMasterVol(this.value)">
+    <span class="val" id="masterVolLabel">75%</span>
+  </div>
+  <span class="status-text" id="statusInfo">就绪</span>
+  <button class="btn-small" onclick="toggleLoop()" id="loopBtn">🔁 循环</button>
+</div>
+
+<!-- ======= 后台管理面板 ======= -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel" id="adminPanel">
+    <div id="adminLogin">
+      <h3>🔐 管理登录</h3>
+      <p style="font-size:11px;color:var(--text2);margin:8px 0;">请输入管理密码</p>
+      <input type="password" class="password-input" id="adminPwd" placeholder="····" maxlength="20" onkeydown="if(event.key==='Enter')adminLogin()">
+      <p class="login-hint">默认密码：7856</p>
+      <div style="text-align:center;margin-top:8px;">
+        <button class="btn-small primary" onclick="adminLogin()">登录</button>
+        <button class="btn-small" onclick="closeAdmin()">取消</button>
+      </div>
+    </div>
+    <div id="adminContent" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3>⚙ 素材管理后台</h3>
+        <button class="close-btn" onclick="closeAdmin()">✕</button>
+      </div>
+      <div class="admin-section">
+        <h4>🌿 环境音场景管理</h4>
+        <label>场景名称</label>
+        <input type="text" id="ambientName" placeholder="例如：森林·鸟鸣溪流">
+        <label>环境音文件 <span style="color:var(--text2);font-size:10px;">（支持 MP3 / OGG / WAV / AAC / M4A / FLAC / WebM）</span></label>
+        <input type="file" id="ambientFile" accept="audio/*,.mp3,.ogg,.wav,.aac,.m4a,.flac,.webm">
+        <div class="btn-row">
+          <button class="primary" onclick="uploadAmbient()">📤 上传场景</button>
+          <button onclick="refreshAmbientFiles()">🔄 刷新列表</button>
+        </div>
+        <div class="admin-file-list" id="ambientFileList"><div style="color:var(--text2);">加载中...</div></div>
+      </div>
+      <div class="admin-section">
+        <h4>🎹 音乐曲目管理</h4>
+        <label>曲目名称</label>
+        <input type="text" id="musicTrackName" placeholder="例如：森林晨曦">
+        <label>分轨文件（可多选，按选择顺序对应第1-8路）<span style="color:var(--text2);font-size:10px;">（支持 MP3 / OGG / WAV / AAC / M4A / FLAC / WebM，最多8个）</span></label>
+        <input type="file" id="musicFiles" accept="audio/*,.mp3,.ogg,.wav,.aac,.m4a,.flac,.webm" multiple>
+        <div class="btn-row">
+          <button class="primary" onclick="uploadMusic()">📤 上传曲目</button>
+          <button onclick="refreshMusicFiles()">🔄 刷新列表</button>
+        </div>
+        <div class="admin-file-list" id="musicFileList"><div style="color:var(--text2);">加载中...</div></div>
+      </div>
+      <div class="admin-section">
+        <h4>📡 系统信息</h4>
+        <p style="font-size:11px;color:var(--text2);">
+          IndexedDB 用量：<span id="dbUsage">计算中...</span><br>
+          环境音场景数：<span id="ambientCount">-</span><br>
+          音乐曲目数：<span id="musicCount">-</span><br>
+          版本：v1.0 独立部署版<br>
+          音谋加H5接口：<span style="color:var(--accent);">已预留（/api/yinmoujia/sync）</span>
+        </p>
+        <div class="btn-row">
+          <button class="danger" onclick="clearAllData()">🗑 清空全部数据</button>
+          <button onclick="exportConfig()">📋 导出配置</button>
+        </div>
+      </div>
+      <button class="btn-small" style="margin-top:12px;width:100%;" onclick="closeAdmin()">关闭管理面板</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  IndexedDB
+// ============================================================
+const DB_NAME = 'naxin_player_db', DB_VERSION = 1;
+let db = null;
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('ambient_files')) d.createObjectStore('ambient_files', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('music_files')) d.createObjectStore('music_files', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('config')) d.createObjectStore('config', { keyPath: 'key' });
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = () => reject(req.error);
+  });
+}
+function dbPut(s, d) { return new Promise((r, j) => { const tx = db.transaction(s, 'readwrite'); const st = tx.objectStore(s); const q = st.put(d); q.onsuccess = () => r(q.result); q.onerror = () => j(q.error); }); }
+function dbGetAll(s) { return new Promise((r, j) => { const tx = db.transaction(s, 'readonly'); const st = tx.objectStore(s); const q = st.getAll(); q.onsuccess = () => r(q.result); q.onerror = () => j(q.error); }); }
+function dbGet(s, k) { return new Promise((r, j) => { const tx = db.transaction(s, 'readonly'); const st = tx.objectStore(s); const q = st.get(k); q.onsuccess = () => r(q.result); q.onerror = () => j(q.error); }); }
+function dbDelete(s, k) { return new Promise((r, j) => { const tx = db.transaction(s, 'readwrite'); const st = tx.objectStore(s); const q = st.delete(k); q.onsuccess = () => r(); q.onerror = () => j(q.error); }); }
+function dbClear(s) { return new Promise((r, j) => { const tx = db.transaction(s, 'readwrite'); const st = tx.objectStore(s); const q = st.clear(); q.onsuccess = () => r(); q.onerror = () => j(q.error); }); }
+
+// ============================================================
+//  全局状态
+// ============================================================
+const state = {
+  playing: false, masterVol: 0.75, ambientOn: true, musicOn: true, loop: true,
+  animSpeed: 1, animMode: 'soft', currentAmbientId: null, currentMusicId: null,
+};
+const EQ10_BANDS = [
+  { freq: 32,   label: '32' },
+  { freq: 64,   label: '64' },
+  { freq: 125,  label: '125' },
+  { freq: 250,  label: '250' },
+  { freq: 500,  label: '500' },
+  { freq: 1000, label: '1k' },
+  { freq: 2000, label: '2k' },
+  { freq: 4000, label: '4k' },
+  { freq: 8000, label: '8k' },
+  { freq: 16000,label: '16k' },
+];
+let audioCtx = null, masterGain = null;
+let ambientSource = null, ambientFilters = [], ambientBuffer = null;
+let musicSources = [], musicBuffers = [];
+let animInterval = null;
+
+// ============================================================
+//  主题
+// ============================================================
+function setTheme(name) {
+  document.body.classList.remove('theme-ocean', 'theme-warm');
+  if (name === 'ocean') document.body.classList.add('theme-ocean');
+  if (name === 'warm') document.body.classList.add('theme-warm');
+  document.querySelectorAll('.theme-switch button').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('theme' + name.charAt(0).toUpperCase() + name.slice(1));
+  if (btn) btn.classList.add('active');
+  localStorage.setItem('naxin_theme', name);
+}
+
+// ============================================================
+//  音频引擎
+// ============================================================
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = state.masterVol;
+    masterGain.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function setMasterVol(v) {
+  state.masterVol = v / 100;
+  document.getElementById('masterVolLabel').textContent = v + '%';
+  if (masterGain) masterGain.gain.setTargetAtTime(state.masterVol, audioCtx.currentTime, 0.05);
+}
+function generateDemoNoise(dur) {
+  const sr = audioCtx.sampleRate, len = sr * (dur || 60);
+  const buf = audioCtx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buf.getChannelData(ch);
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + w * 0.0555179;
+      b1 = 0.99332 * b1 + w * 0.0750759;
+      b2 = 0.96900 * b2 + w * 0.1538520;
+      data[i] = (b0 + b1 + b2 + w * 0.5362) * 0.11;
+    }
+  }
+  return buf;
+}
+
+// ============================================================
+//  环境音（MP3录音 → 10段BiquadFilter切分）
+// ============================================================
+async function loadAmbientBuffer(id) {
+  const rec = await dbGet('ambient_files', id);
+  if (!rec) return null;
+  return audioCtx.decodeAudioData(rec.data.slice(0));
+}
+async function selectAmbient(id) {
+  if (state.currentAmbientId === id) return;
+  ensureAudioCtx();
+  state.currentAmbientId = id;
+  document.querySelectorAll('#ambientTags button').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+  try {
+    ambientBuffer = await loadAmbientBuffer(id);
+    if (!ambientBuffer) throw new Error('未找到');
+    setStatus('环境音加载完成');
+  } catch {
+    ambientBuffer = generateDemoNoise(60);
+    setStatus('已加载演示噪声');
+  }
+  if (state.playing) restartAmbient();
+}
+function startAmbient() {
+  stopAmbient();
+  if (!ambientBuffer || !state.ambientOn) return;
+  ambientFilters = [];
+  const src = audioCtx.createBufferSource();
+  src.buffer = ambientBuffer; src.loop = state.loop;
+  EQ10_BANDS.forEach((band, i) => {
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = band.freq; filter.Q.value = 1.0;
+    const gain = audioCtx.createGain();
+    const slider = document.querySelector(`input[data-eq="${i}"]`);
+    gain.gain.value = slider ? parseInt(slider.value) / 100 : 0.5;
+    src.connect(filter); filter.connect(gain).connect(masterGain);
+    ambientFilters.push({ filter, gainNode: gain });
+  });
+  src.start(0);
+  ambientSource = src;
+}
+function stopAmbient() { try { ambientSource && ambientSource.stop(); } catch(e) {} ambientSource = null; ambientFilters = []; }
+function restartAmbient() { stopAmbient(); if (state.ambientOn && ambientBuffer) startAmbient(); }
+function setAmbientBand(i, val) {
+  const v = val / 100;
+  const labelEl = document.getElementById('eqVal' + i);
+  if (labelEl) labelEl.textContent = val;
+  // 首次滑动滑块 → 自动开始播放（解决"没按播放听不到"的问题）
+  if (!state.playing) { ensureAudioCtx(); startAll(); state.playing = true; document.getElementById('playBtn').textContent = '⏸'; }
+  if (ambientFilters[i] && ambientFilters[i].gainNode)
+    ambientFilters[i].gainNode.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
+}
+function toggleAmbient() {
+  state.ambientOn = !state.ambientOn;
+  document.getElementById('ambientSwitch').classList.toggle('on', state.ambientOn);
+  if (!state.ambientOn) stopAmbient(); else if (state.playing) startAmbient();
+}
+
+// ============================================================
+//  音乐分轨（8路独立GainNode）
+// ============================================================
+async function loadMusicBuffers(id) {
+  const rec = await dbGet('music_files', id);
+  if (!rec || !rec.channels || rec.channels.length === 0) return [];
+  const bufs = [];
+  for (let i = 0; i < rec.channels.length; i++) {
+    try { bufs.push(await audioCtx.decodeAudioData(rec.channels[i].slice(0))); } catch { bufs.push(null); }
+  }
+  while (bufs.length < 8) bufs.push(generateDemoNoise(60));
+  return bufs;
+}
+async function selectMusic(id) {
+  if (state.currentMusicId === id) return;
+  ensureAudioCtx();
+  state.currentMusicId = id;
+  document.querySelectorAll('#musicTags button').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+  try {
+    musicBuffers = await loadMusicBuffers(id);
+    setStatus(`曲目加载完成（${musicBuffers.filter(b=>b).length}/8路）`);
+  } catch {
+    musicBuffers = Array.from({length:8}, () => generateDemoNoise(60));
+    setStatus('已加载演示音频');
+  }
+  if (state.playing) restartMusic();
+}
+function startMusic() {
+  stopMusic();
+  if (!state.musicOn || musicBuffers.length === 0) return;
+  musicSources = [];
+  for (let i = 0; i < 8; i++) {
+    if (!musicBuffers[i]) continue;
+    const src = audioCtx.createBufferSource();
+    src.buffer = musicBuffers[i]; src.loop = state.loop;
+    const gain = audioCtx.createGain();
+    const slider = document.querySelector(`input[data-ch="${i}"]`);
+    gain.gain.value = slider ? parseInt(slider.value) / 100 : 0.5;
+    src.connect(gain).connect(masterGain);
+    src.start(0);
+    musicSources.push({ source: src, gainNode: gain, ch: i });
+  }
+}
+function stopMusic() { musicSources.forEach(s => { try { s.source.stop(); } catch(e) {} }); musicSources = []; }
+function restartMusic() { stopMusic(); if (state.musicOn && musicBuffers.length > 0) startMusic(); }
+function setMusicGain(ch, val) {
+  const v = val / 100;
+  const labelEl = document.getElementById('musicVal' + ch);
+  if (labelEl) labelEl.textContent = val;
+  // 首次滑动滑块 → 自动开始播放
+  if (!state.playing) { ensureAudioCtx(); startAll(); state.playing = true; document.getElementById('playBtn').textContent = '⏸'; }
+  const src = musicSources.find(s => s.ch === ch);
+  if (src && src.gainNode) src.gainNode.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
+}
+function toggleMusic() {
+  state.musicOn = !state.musicOn;
+  document.getElementById('musicSwitch').classList.toggle('on', state.musicOn);
+  if (!state.musicOn) stopMusic(); else if (state.playing) startMusic();
+}
+
+// ============================================================
+//  播放控制
+// ============================================================
+function togglePlay() {
+  if (state.playing) { stopAll(); state.playing = false; document.getElementById('playBtn').textContent = '▶'; setStatus('已停止'); }
+  else { ensureAudioCtx(); startAll(); state.playing = true; document.getElementById('playBtn').textContent = '⏸'; setStatus('播放中...'); }
+}
+function startAll() { if (state.ambientOn && ambientBuffer) startAmbient(); if (state.musicOn && musicBuffers.length > 0) startMusic(); startAnimation(); }
+function stopAll() { stopAmbient(); stopMusic(); stopAnimation(); }
+function toggleLoop() {
+  state.loop = !state.loop;
+  document.getElementById('loopBtn').textContent = state.loop ? '🔁 循环' : '🔂 单次';
+  if (state.playing) { stopAll(); startAll(); }
+}
+
+// ============================================================
+//  LFO动画
+// ============================================================
+function startAnimation() {
+  stopAnimation();
+  if (state.animSpeed <= 0) return;
+  const iv = Math.max(100, 2000 / state.animSpeed);
+  animInterval = setInterval(() => {
+    if (!state.playing) return;
+    ambientFilters.forEach((nf, i) => {
+      if (!nf || !nf.gainNode) return;
+      const slider = document.querySelector(`input[data-eq="${i}"]`);
+      const base = slider ? parseInt(slider.value) / 100 : 0.5;
+      let delta = 0;
+      if (state.animMode === 'soft') delta = (Math.random() - 0.5) * 0.12;
+      else if (state.animMode === 'hard') delta = (Math.random() - 0.5) * 0.30;
+      else if (state.animMode === 'solo') delta = (i === Math.floor(Math.random()*10)) ? 0.25 : -0.08;
+      nf.gainNode.gain.setTargetAtTime(Math.max(0, Math.min(1, base + delta)), audioCtx.currentTime, 0.1);
+    });
+  }, iv);
+}
+function stopAnimation() { if (animInterval) clearInterval(animInterval); animInterval = null; }
+function setAnimSpeed(v) { state.animSpeed = parseFloat(v); document.getElementById('animSpeedLabel').textContent = 'x' + v; if (state.playing) startAnimation(); }
+function setAnimMode(v) { state.animMode = v; if (state.playing) startAnimation(); }
+
+// ============================================================
+//  8+8 预设系统
+// ============================================================
+const PRESETS = {
+  // 环境音预设（10段EQ值）
+  amb_focus:     { eq: [20,30,40,50,80,70,60,50,30,20] },
+  amb_meditate:  { eq: [50,60,70,65,55,50,45,40,35,40] },
+  amb_sleep:     { eq: [70,65,55,45,35,30,25,20,15,20] },
+  amb_read:      { eq: [30,40,60,70,65,55,45,35,25,20] },
+  amb_relax:     { eq: [40,50,65,70,60,55,50,45,40,35] },
+  amb_forest:    { eq: [60,65,70,55,50,60,55,45,35,30] },
+  amb_rain:      { eq: [25,30,40,60,65,55,45,35,25,20] },
+  amb_ocean_p:   { eq: [90,80,70,60,50,45,40,35,40,45] },
+  // 音乐预设（8路音量值）
+  mus_default:   { music: [80,60,40,75,55,65,50,45] },
+  mus_soft:      { music: [50,40,35,50,40,45,35,30] },
+  mus_full:      { music: [90,85,75,90,80,85,75,70] },
+  mus_sparse:    { music: [60,30,20,50,25,35,20,15] },
+  mus_dream:     { music: [40,60,70,35,50,80,45,30] },
+  mus_classic:   { music: [70,80,50,40,35,60,55,45] },
+  mus_rhythm:    { music: [50,30,20,80,85,70,60,75] },
+  mus_ethereal:  { music: [30,50,60,40,45,70,55,20] },
+};
+function applyPreset(name) {
+  const p = PRESETS[name]; if (!p) return;
+  // 首次点击预设 → 自动开始播放
+  if (!state.playing) { ensureAudioCtx(); startAll(); state.playing = true; document.getElementById('playBtn').textContent = '⏸'; }
+  if (p.eq) {
+    // 环境音预设：设置10段EQ滑块
+    p.eq.forEach((v, i) => { const input = document.querySelector(`input[data-eq="${i}"]`); if (input) { input.value = v; setAmbientBand(i, v); } });
+    // 高亮当前预设按钮
+    document.querySelectorAll('#ambientPresets button').forEach(b => b.classList.remove('active'));
+    const ambBtn = document.querySelector(`#ambientPresets button[onclick*="${name}"]`);
+    if (ambBtn) ambBtn.classList.add('active');
+  }
+  if (p.music) {
+    // 音乐预设：设置8路音量滑块
+    p.music.forEach((v, i) => { const input = document.querySelector(`input[data-ch="${i}"]`); if (input) { input.value = v; document.getElementById('musicVal'+i).textContent = v; } });
+    remapAllMusicGains();
+    // 高亮当前预设按钮
+    document.querySelectorAll('#musicPresets button').forEach(b => b.classList.remove('active'));
+    const musBtn = document.querySelector(`#musicPresets button[onclick*="${name}"]`);
+    if (musBtn) musBtn.classList.add('active');
+  }
+  setStatus(`已切换模式：${name}`);
+}
+function remapAllMusicGains() {
+  for (let i = 0; i < 8; i++) {
+    const slider = document.querySelector(`input[data-ch="${i}"]`);
+    const v = slider ? parseInt(slider.value) / 100 : 0;
+    const src = musicSources.find(s => s.ch === i);
+    if (src && src.gainNode) src.gainNode.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
+  }
+}
+function setStatus(msg) {
+  const el = document.getElementById('statusInfo'); el.textContent = msg;
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => { el.textContent = state.playing ? '播放中...' : '就绪'; }, 3000);
+}
+
+// ============================================================
+//  UI构建
+// ============================================================
+function buildUI() {
+  // 10段竖向均衡器
+  const eqRow = document.getElementById('eqVerticalRow');
+  const defaultEQ = [30,40,50,60,70,65,55,45,35,25];
+  EQ10_BANDS.forEach((band, i) => {
+    const col = document.createElement('div'); col.className = 'eq-vcol';
+    col.innerHTML = `
+      <div class="v-val" id="eqVal${i}">${defaultEQ[i]}</div>
+      <input type="range" min="0" max="100" value="${defaultEQ[i]}" data-eq="${i}" oninput="setAmbientBand(${i}, this.value)">
+      <div class="v-freq">${band.label}Hz</div>
+    `;
+    eqRow.appendChild(col);
+  });
+  // 8路横向滑块
+  const musicSliders = document.getElementById('musicSliders');
+  const defaultMus = [80,60,40,75,55,65,50,45];
+  for (let i = 0; i < 8; i++) {
+    const row = document.createElement('div'); row.className = 'track-row';
+    row.innerHTML = `
+      <div class="track-label">第${i+1}路</div>
+      <input type="range" min="0" max="100" value="${defaultMus[i]}" data-ch="${i}" oninput="setMusicGain(${i}, this.value)">
+      <div class="track-val" id="musicVal${i}">${defaultMus[i]}</div>
+    `;
+    musicSliders.appendChild(row);
+  }
+}
+async function refreshAmbientTags() {
+  const c = document.getElementById('ambientTags');
+  const files = await dbGetAll('ambient_files');
+  c.innerHTML = files.map(f => `<button data-id="${f.id}" onclick="selectAmbient('${f.id}')">🌿 ${f.name}</button>`).join('')
+    || '<span style="font-size:11px;color:var(--text2);">暂无环境音场景，请通过管理后台上传</span>';
+}
+async function refreshMusicTags() {
+  const c = document.getElementById('musicTags');
+  const files = await dbGetAll('music_files');
+  c.innerHTML = files.map(f => `<button data-id="${f.id}" onclick="selectMusic('${f.id}')">🎹 ${f.name}</button>`).join('')
+    || '<span style="font-size:11px;color:var(--text2);">暂无音乐曲目，请通过管理后台上传</span>';
+}
+async function refreshAllTags() {
+  await refreshAmbientTags(); await refreshMusicTags();
+  document.getElementById('ambientCount').textContent = (await dbGetAll('ambient_files')).length;
+  document.getElementById('musicCount').textContent = (await dbGetAll('music_files')).length;
+}
+
+// ============================================================
+//  后台管理
+// ============================================================
+const ADMIN_PASSWORD = '7856'; let adminLoggedIn = false;
+function showAdminLogin() { document.getElementById('adminOverlay').classList.add('show'); document.getElementById('adminLogin').style.display='block'; document.getElementById('adminContent').style.display='none'; adminLoggedIn=false; setTimeout(()=>document.getElementById('adminPwd').focus(),200); }
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('show'); document.getElementById('adminPwd').value=''; }
+function adminLogin() {
+  if (document.getElementById('adminPwd').value.trim() === ADMIN_PASSWORD) {
+    adminLoggedIn = true;
+    document.getElementById('adminLogin').style.display='none';
+    document.getElementById('adminContent').style.display='block';
+    document.getElementById('adminPwd').value='';
+    refreshAdminLists(); updateDBUsage();
+  } else { alert('密码错误'); document.getElementById('adminPwd').value=''; document.getElementById('adminPwd').focus(); }
+}
+async function uploadAmbient() {
+  if (!adminLoggedIn) return;
+  const name = document.getElementById('ambientName').value.trim(), file = document.getElementById('ambientFile').files[0];
+  if (!name) { alert('请输入场景名称'); return; }
+  if (!file) { alert('请选择音频文件'); return; }
+  const ab = await file.arrayBuffer();
+  await dbPut('ambient_files', { id:'amb_'+Date.now(), name, fileName:file.name, fileType:file.type, fileSize:file.size, data:ab, uploadedAt:new Date().toISOString() });
+  document.getElementById('ambientName').value=''; document.getElementById('ambientFile').value='';
+  await refreshAmbientTags(); await refreshAdminLists(); updateDBUsage();
+  setStatus(`场景「${name}」上传成功`); alert(`场景「${name}」上传成功！`);
+}
+async function uploadMusic() {
+  if (!adminLoggedIn) return;
+  const name = document.getElementById('musicTrackName').value.trim(), files = Array.from(document.getElementById('musicFiles').files);
+  if (!name) { alert('请输入曲目名称'); return; }
+  if (files.length===0) { alert('请选择分轨文件'); return; }
+  if (files.length>8) { alert('最多8个分轨文件'); return; }
+  const channels = []; for (const f of files) channels.push(await f.arrayBuffer());
+  await dbPut('music_files', { id:'mus_'+Date.now(), name, channelCount:channels.length, channels, fileNames:files.map(f=>f.name), uploadedAt:new Date().toISOString() });
+  document.getElementById('musicTrackName').value=''; document.getElementById('musicFiles').value='';
+  await refreshMusicTags(); await refreshAdminLists(); updateDBUsage();
+  setStatus(`曲目「${name}」上传成功（${channels.length}路）`); alert(`曲目「${name}」上传成功！共 ${channels.length} 路分轨。`);
+}
+async function refreshAmbientFiles() {
+  const c = document.getElementById('ambientFileList');
+  const files = await dbGetAll('ambient_files');
+  c.innerHTML = files.map(f => `<div><span>🌿 ${f.name} <small>(${f.fileName}, ${(f.fileSize/1048576).toFixed(1)}MB)</small></span><span class="del" onclick="deleteAmbient('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
+  document.getElementById('ambientCount').textContent = files.length;
+}
+async function refreshMusicFiles() {
+  const c = document.getElementById('musicFileList');
+  const files = await dbGetAll('music_files');
+  c.innerHTML = files.map(f => `<div><span>🎹 ${f.name} <small>(${f.channelCount||f.channels?.length||0}路分轨)</small></span><span class="del" onclick="deleteMusic('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
+  document.getElementById('musicCount').textContent = files.length;
+}
+async function refreshAdminLists() { await refreshAmbientFiles(); await refreshMusicFiles(); }
+async function deleteAmbient(id) {
+  if (!confirm('确定删除？')) return;
+  await dbDelete('ambient_files', id);
+  if (state.currentAmbientId===id) { state.currentAmbientId=null; stopAmbient(); ambientBuffer=null; }
+  await refreshAmbientTags(); await refreshAmbientFiles(); updateDBUsage();
+}
+async function deleteMusic(id) {
+  if (!confirm('确定删除？')) return;
+  await dbDelete('music_files', id);
+  if (state.currentMusicId===id) { state.currentMusicId=null; stopMusic(); musicBuffers=[]; }
+  await refreshMusicTags(); await refreshMusicFiles(); updateDBUsage();
+}
+async function updateDBUsage() {
+  let total=0; const a=await dbGetAll('ambient_files'), m=await dbGetAll('music_files');
+  a.forEach(f=>total+=f.fileSize||0); m.forEach(f=>{if(f.channels)f.channels.forEach(c=>total+=c.byteLength||0);});
+  document.getElementById('dbUsage').textContent = (total/1048576).toFixed(1)+' MB';
+}
+async function clearAllData() {
+  if (!confirm('⚠️ 确定清空全部数据？此操作不可恢复！')) return;
+  if (!confirm('再次确认：清空所有环境音、音乐文件和配置？')) return;
+  await dbClear('ambient_files'); await dbClear('music_files');
+  stopAll(); state.playing=false; state.currentAmbientId=null; state.currentMusicId=null;
+  ambientBuffer=null; musicBuffers=[]; document.getElementById('playBtn').textContent='▶';
+  await refreshAllTags(); await refreshAdminLists(); updateDBUsage(); setStatus('全部数据已清空');
+}
+async function exportConfig() {
+  const a=await dbGetAll('ambient_files'), m=await dbGetAll('music_files');
+  const cfg={version:'1.0',exportedAt:new Date().toISOString(),ambientScenes:a.map(f=>({id:f.id,name:f.name,fileName:f.fileName})),musicTracks:m.map(f=>({id:f.id,name:f.name,channelCount:f.channelCount}))};
+  const blob=new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob), el=document.createElement('a');
+  el.href=url; el.download='naxin_config_'+new Date().toISOString().slice(0,10)+'.json'; el.click(); URL.revokeObjectURL(url);
+  alert('配置已导出');
+}
+document.getElementById('adminOverlay').addEventListener('click', function(e){ if(e.target===this) closeAdmin(); });
+
+// ============================================================
+//  启动
+// ============================================================
+async function init() {
+  buildUI();
+  await openDB();
+  const saved = localStorage.getItem('naxin_theme') || 'forest'; setTheme(saved);
+  await refreshAllTags();
+  const ambients = await dbGetAll('ambient_files');
+  if (ambients.length>0) await selectAmbient(ambients[0].id);
+  else { ensureAudioCtx(); ambientBuffer = generateDemoNoise(60); setStatus('就绪 — 请通过管理后台上传环境音'); }
+  const musics = await dbGetAll('music_files');
+  if (musics.length>0) await selectMusic(musics[0].id);
+  else { ensureAudioCtx(); musicBuffers = Array.from({length:8},()=>generateDemoNoise(60)); }
+  setStatus('就绪 — 点击播放开始');
+}
+
+// 预留音谋加H5对接接口
+// POST /api/yinmoujia/sync  — 同步用户登录态、曲目库
+// GET  /api/yinmoujia/tracks — 从云端拉取曲目列表
+// window.naxinAPI = { setUser, getPlayState, setPlayState, loadTrack }
+
+init();
+</script>
+</body>
+</html>
