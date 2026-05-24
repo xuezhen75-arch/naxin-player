@@ -1266,6 +1266,17 @@ async function init() {
 // GET  /api/yinmoujia/tracks — 从云端拉取曲目列表
 // window.naxinAPI = { setUser, getPlayState, setPlayState, loadTrack }
 
+// Service Worker — 缓存加速
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    console.log('SW 注册成功', reg.scope);
+    // 显示缓存状态
+    if (navigator.serviceWorker.controller) {
+      setStatus('已缓存 — 离线可用');
+    }
+  }).catch(e => console.warn('SW 注册失败', e));
+}
+
 init();
 </script>
 </body>
