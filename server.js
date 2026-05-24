@@ -107,7 +107,15 @@ app.get('/api/music', (req, res) => {
   res.json(db.music.map(m => ({ id: m.id, name: m.name, channelCount: m.channelCount, fileNames: m.fileNames, uploadedAt: m.uploadedAt })));
 });
 
-// 下载音乐分轨（以zip方式或单个channel）
+// 获取单个音乐元数据
+app.get('/api/music/:id', (req, res) => {
+  const db = readDB();
+  const item = db.music.find(m => m.id === req.params.id);
+  if (!item) return res.status(404).json({ error: 'Not found' });
+  res.json({ id: item.id, name: item.name, channelCount: item.channelCount, fileNames: item.fileNames, uploadedAt: item.uploadedAt });
+});
+
+// 下载音乐分轨单个channel
 app.get('/api/music/:id/:ch', (req, res) => {
   const db = readDB();
   const item = db.music.find(m => m.id === req.params.id);
