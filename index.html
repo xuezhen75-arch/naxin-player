@@ -450,7 +450,7 @@ body {
 <!-- ======= 顶部栏 ======= -->
 <div class="header">
   <div class="logo">🎵 纳心音乐播放器</div>
-  <div class="brand">Naxin Player v1.5.1</div>
+  <div class="brand">Naxin Player v1.6</div>
   <div class="spacer"></div>
   <div class="theme-switch">
     <button onclick="setTheme('forest')" class="active" id="themeForest" title="森林绿">🌿</button>
@@ -618,8 +618,8 @@ body {
           🌿 环境音：<span id="ambientStorage">-</span>（<span id="ambientCount">-</span> 个场景）<br>
           🎹 音乐曲目：<span id="musicStorage">-</span>（<span id="musicCount">-</span> 首，支持12路分轨/首）<br>
           📦 总计：<span id="dbUsage">计算中...</span><br>
-          💡 浏览器 IndexedDB 通常可存 <b>100MB~2GB</b>（取决于设备剩余空间）<br>
-          版本：v1.5 独立部署版<br>
+          💡 素材存储在服务器 Render 磁盘（<b>1GB 免费</b>），所有设备共享同一素材库<br>
+          版本：v1.6 服务端存储版<br>
           音谋加H5接口：<span style="color:var(--accent);">已预留（/api/yinmoujia/sync）</span>
         </p>
         <div class="btn-row">
@@ -634,28 +634,64 @@ body {
 
 <script>
 // ============================================================
-//  IndexedDB
+//  数据存储 — 服务器API（主）
 // ============================================================
-const DB_NAME = 'naxin_player_db', DB_VERSION = 1;
+const API_TOKEN = '7856';
+const DB_NAME = 'naxin_player_cache', DB_VERSION = 1;
+
 let db = null;
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (e) => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains('ambient_files')) d.createObjectStore('ambient_files', { keyPath: 'id' });
-      if (!d.objectStoreNames.contains('music_files')) d.createObjectStore('music_files', { keyPath: 'id' });
-      if (!d.objectStoreNames.contains('config')) d.createObjectStore('config', { keyPath: 'key' });
-    };
-    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
-    req.onerror = () => reject(req.error);
-  });
+async function openDB() {
+  // IndexedDB仅作本地缓存，服务器不可用时回退
+  try {
+    return new Promise((resolve) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains('ambient_files')) d.createObjectStore('ambient_files', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('music_files')) d.createObjectStore('music_files', { keyPath: 'id' });
+      };
+      req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      req.onerror = () => { db = null; resolve(null); };
+    });
+  } catch { db = null; }
 }
-function dbPut(s, d) { return new Promise((r, j) => { const tx = db.transaction(s, 'readwrite'); const st = tx.objectStore(s); const q = st.put(d); q.onsuccess = () => r(q.result); q.onerror = () => j(q.error); }); }
-function dbGetAll(s) { return new Promise((r, j) => { const tx = db.transaction(s, 'readonly'); const st = tx.objectStore(s); const q = st.getAll(); q.onsuccess = () => r(q.result); q.onerror = () => j(q.error); }); }
-function dbGet(s, k) { return new Promise((r, j) => { const tx = db.transaction(s, 'readonly'); const st = tx.objectStore(s); const q = st.get(k); q.onsuccess = () => r(q.result); q.onerror = () => j(q.error); }); }
-function dbDelete(s, k) { return new Promise((r, j) => { const tx = db.transaction(s, 'readwrite'); const st = tx.objectStore(s); const q = st.delete(k); q.onsuccess = () => r(); q.onerror = () => j(q.error); }); }
-function dbClear(s) { return new Promise((r, j) => { const tx = db.transaction(s, 'readwrite'); const st = tx.objectStore(s); const q = st.clear(); q.onsuccess = () => r(); q.onerror = () => j(q.error); }); }
+
+async function apiFetch(path, opts = {}) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(r.status + ': ' + (await r.text().catch(()=>'')));
+  return r;
+}
+
+async function dbGetAll(s) {
+  const ep = s === 'ambient_files' ? 'ambient' : 'music';
+  return (await apiFetch('/api/' + ep)).json();
+}
+async function dbGet(s, k) {
+  if (s === 'ambient_files') return (await apiFetch('/api/ambient/' + k)).arrayBuffer();
+  // music: dbGet('music_files', id) 在 loadMusicBuffers 中单独处理
+  return (await apiFetch('/api/music/' + k)).json();
+}
+async function dbPut(s, d) {
+  const fd = new FormData();
+  if (s === 'ambient_files') {
+    fd.append('name', d.name);
+    fd.append('file', new Blob([d.data], { type: d.fileType }), d.fileName);
+    return (await apiFetch('/api/ambient', { method: 'POST', headers: { 'X-Admin-Token': API_TOKEN }, body: fd })).json();
+  } else {
+    fd.append('name', d.name);
+    for (let i = 0; i < d.channels.length; i++)
+      fd.append('files', new Blob([d.channels[i]]), d.fileNames[i]);
+    return (await apiFetch('/api/music', { method: 'POST', headers: { 'X-Admin-Token': API_TOKEN }, body: fd })).json();
+  }
+}
+async function dbDelete(s, k) {
+  const ep = s === 'ambient_files' ? 'ambient' : 'music';
+  return (await apiFetch('/api/' + ep + '/' + k, { method: 'DELETE', headers: { 'X-Admin-Token': API_TOKEN } })).json();
+}
+async function dbClear(s) {
+  const list = await dbGetAll(s);
+  for (const item of list) { try { await dbDelete(s, item.id); } catch(e) {} }
+}
 
 // ============================================================
 //  全局状态
@@ -732,9 +768,9 @@ function generateDemoNoise(dur) {
 //  环境音（MP3录音 → 10段BiquadFilter切分）
 // ============================================================
 async function loadAmbientBuffer(id) {
-  const rec = await dbGet('ambient_files', id);
-  if (!rec) return null;
-  return audioCtx.decodeAudioData(rec.data.slice(0));
+  const data = await dbGet('ambient_files', id);  // 返回服务器上的原始音频ArrayBuffer
+  if (!data || data.byteLength === 0) return null;
+  return audioCtx.decodeAudioData(data.slice(0));
 }
 async function selectAmbient(id) {
   if (state.currentAmbientId === id) return;
@@ -802,15 +838,23 @@ function toggleAmbientPlay() {
 //  音乐分轨（12路独立GainNode）
 // ============================================================
 async function loadMusicBuffers(id) {
-  const rec = await dbGet('music_files', id);
-  if (!rec || !rec.channels || rec.channels.length === 0) return [];
+  const meta = await dbGet('music_files', id);  // JSON { id, name, channelCount, fileNames }
+  if (!meta || !meta.channelCount) return [];
   const bufs = [];
-  for (let i = 0; i < rec.channels.length; i++) {
-    try { bufs.push(await audioCtx.decodeAudioData(rec.channels[i].slice(0))); } catch { bufs.push(null); }
+  for (let i = 0; i < meta.channelCount; i++) {
+    try {
+      const data = await dbGetM('music_files', id, i);  // 获取单个分轨原始音频
+      bufs.push(await audioCtx.decodeAudioData(data.slice(0)));
+    } catch { bufs.push(null); }
   }
   // 补齐到12路，空位填null
   while (bufs.length < 12) bufs.push(null);
   return bufs;
+}
+// 拉取单个音乐分轨的原始音频
+async function dbGetM(s, id, ch) {
+  const ep = s === 'ambient_files' ? 'ambient' : 'music';
+  return (await apiFetch('/api/' + ep + '/' + id + '/' + ch)).arrayBuffer();
 }
 // 更新12轨UI状态：有空音频数据=亮，无=灰
 function updateTrackStates() {
@@ -1103,7 +1147,7 @@ async function uploadAmbient() {
   if (!name) { alert('请输入场景名称'); return; }
   if (!file) { alert('请选择音频文件'); return; }
   const ab = await file.arrayBuffer();
-  await dbPut('ambient_files', { id:'amb_'+Date.now(), name, fileName:file.name, fileType:file.type, fileSize:file.size, data:ab, uploadedAt:new Date().toISOString() });
+  const rec = await dbPut('ambient_files', { name, fileName: file.name, fileType: file.type, fileSize: file.size, data: ab });
   document.getElementById('ambientName').value=''; document.getElementById('ambientFile').value='';
   await refreshAmbientTags(); await refreshAdminLists(); updateDBUsage();
   setStatus(`场景「${name}」上传成功`); alert(`场景「${name}」上传成功！`);
@@ -1115,10 +1159,10 @@ async function uploadMusic() {
   if (files.length===0) { alert('请选择分轨文件'); return; }
   if (files.length>12) { alert('最多12个分轨文件'); return; }
   const channels = []; for (const f of files) channels.push(await f.arrayBuffer());
-  await dbPut('music_files', { id:'mus_'+Date.now(), name, channelCount:channels.length, channels, fileNames:files.map(f=>f.name), uploadedAt:new Date().toISOString() });
+  const rec = await dbPut('music_files', { name, channelCount: channels.length, channels, fileNames: files.map(f=>f.name) });
   document.getElementById('musicTrackName').value=''; document.getElementById('musicFiles').value='';
   await refreshMusicTags(); await refreshAdminLists(); updateDBUsage();
-  setStatus(`曲目「${name}」上传成功（${channels.length}路）`); alert(`曲目「${name}」上传成功！共 ${channels.length} 路分轨。`);
+  setStatus(`曲目「${name}」上传成功（${channels.length}路）`); alert(`曲目「${name}」上传成功！共 ${rec.channelCount} 路分轨。`);
 }
 async function refreshAmbientFiles() {
   const c = document.getElementById('ambientFileList');
@@ -1129,7 +1173,7 @@ async function refreshAmbientFiles() {
 async function refreshMusicFiles() {
   const c = document.getElementById('musicFileList');
   const files = await dbGetAll('music_files');
-  c.innerHTML = files.map(f => `<div><span>🎹 ${f.name} <small>(${f.channelCount||f.channels?.length||0}路分轨)</small></span><span class="del" onclick="deleteMusic('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
+  c.innerHTML = files.map(f => `<div><span>🎹 ${f.name} <small>(${f.channelCount}路分轨)</small></span><span class="del" onclick="deleteMusic('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
   document.getElementById('musicCount').textContent = files.length;
 }
 async function refreshAdminLists() { await refreshAmbientFiles(); await refreshMusicFiles(); }
@@ -1146,16 +1190,17 @@ async function deleteMusic(id) {
   await refreshMusicTags(); await refreshMusicFiles(); updateDBUsage();
 }
 async function updateDBUsage() {
-  const a = await dbGetAll('ambient_files'), m = await dbGetAll('music_files');
-  let ambientTotal = 0; a.forEach(f => ambientTotal += f.fileSize || 0);
-  let musicTotal = 0; m.forEach(f => { if (f.channels) f.channels.forEach(c => musicTotal += c.byteLength || 0); });
-  const total = ambientTotal + musicTotal;
-  const fmt = (b) => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : (b/1024).toFixed(0)+' KB';
-  document.getElementById('dbUsage').textContent = fmt(total);
-  document.getElementById('ambientStorage').textContent = fmt(ambientTotal);
-  document.getElementById('musicStorage').textContent = fmt(musicTotal);
-  document.getElementById('ambientCount').textContent = a.length;
-  document.getElementById('musicCount').textContent = m.length;
+  try {
+    const r = await fetch('/api/usage'); const d = await r.json();
+    const fmt = (b) => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : (b/1024).toFixed(0)+' KB';
+    document.getElementById('dbUsage').textContent = fmt(d.totalBytes);
+    document.getElementById('ambientStorage').textContent = '-';
+    document.getElementById('musicStorage').textContent = '-';
+    document.getElementById('ambientCount').textContent = d.ambientCount;
+    document.getElementById('musicCount').textContent = d.musicCount;
+  } catch(e) {
+    document.getElementById('dbUsage').textContent = '离线';
+  }
 }
 async function clearAllData() {
   if (!confirm('⚠️ 确定清空全部数据？此操作不可恢复！')) return;
