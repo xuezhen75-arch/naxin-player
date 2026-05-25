@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3d7a52">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>纳心音乐播放器 · 桌面版</title>
+<style>
+/* ============================================================
+   纳心 · 主题系统 — 三色
+   ============================================================ */
+:root {
+  --bg: #eaf2e5;
+  --bg-card: #f8fbf5;
+  --bg-card2: #f0f5ec;
+  --glass: rgba(248,251,245,0.85);
+  --text: #1e2d1a;
+  --text2: #7d8e74;
+  --text3: #4a5c42;
+  --border: #c8d8bf;
+  --border2: #dde9d5;
+  --accent: #3d7a52;
+  --accent2: #5cc07a;
+  --accent3: #265a38;
+  --accent-bg: #e2f5e5;
+  --accent-glow: rgba(92,192,122,0.25);
+  --music-accent: #5e4ed4;
+  --music-bg: #f0effc;
+  --music-border: #8b82e8;
+  --music-glow: rgba(94,78,212,0.2);
+  --slider-track: #c8d8bf;
+  --slider-thumb: #3d7a52;
+  --slider-ambi: #5cc07a;
+  --switch-off: #c8d8bf;
+  --switch-on: #5cc07a;
+  --topbar-bg: rgba(248,251,245,0.92);
+  --bottombar-bg: rgba(248,251,245,0.88);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.08);
+  --radius: 18px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+}
+body.theme-ocean {
+  --bg: #e5eff8;
+  --bg-card: #f4f9fd;
+  --bg-card2: #edf4fa;
+  --glass: rgba(244,249,253,0.85);
+  --text: #122338;
+  --text2: #6b8ca8;
+  --text3: #3d5e7a;
+  --border: #bed4e8;
+  --border2: #d6e4f2;
+  --accent: #2a6ba8;
+  --accent2: #4a94d8;
+  --accent3: #1a4570;
+  --accent-bg: #dfeefa;
+  --accent-glow: rgba(74,148,216,0.25);
+  --music-accent: #2a6ba8;
+  --music-bg: #e2eef8;
+  --music-border: #4a94d8;
+  --music-glow: rgba(42,107,168,0.2);
+  --slider-track: #bed4e8;
+  --slider-thumb: #2a6ba8;
+  --slider-ambi: #4a94d8;
+  --switch-on: #4a94d8;
+  --topbar-bg: rgba(244,249,253,0.92);
+  --bottombar-bg: rgba(244,249,253,0.88);
+}
+body.theme-warm {
+  --bg: #f5ebe0;
+  --bg-card: #fef9f3;
+  --bg-card2: #f9f0e5;
+  --glass: rgba(254,249,243,0.85);
+  --text: #382818;
+  --text2: #9a7e60;
+  --text3: #604a35;
+  --border: #e0cba8;
+  --border2: #efe0cc;
+  --accent: #c06828;
+  --accent2: #e88a4a;
+  --accent3: #8a4020;
+  --accent-bg: #fde8d5;
+  --accent-glow: rgba(232,138,74,0.25);
+  --music-accent: #c06828;
+  --music-bg: #fde8d5;
+  --music-border: #e88a4a;
+  --music-glow: rgba(192,104,40,0.2);
+  --slider-track: #e0cba8;
+  --slider-thumb: #c06828;
+  --slider-ambi: #e88a4a;
+  --switch-on: #e88a4a;
+  --topbar-bg: rgba(254,249,243,0.92);
+  --bottombar-bg: rgba(254,249,243,0.88);
+}
+
+/* ============================================================
+   全局 — 呼吸背景
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-bg), var(--bg) 70%);
+  color: var(--text);
+  min-height: 100vh; min-height: 100dvh;
+  padding-bottom: 90px;
+  transition: background 0.5s, color 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  letter-spacing: 0.02em;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+/* ============================================================
+   顶部栏 — 轻盈透明
+   ============================================================ */
+.header {
+  background: var(--topbar-bg);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border2);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  top: 0; z-index: 100;
+}
+.header .logo {
+  font-size: 15px; font-weight: 700; color: var(--accent);
+  white-space: nowrap; letter-spacing: 0.03em;
+}
+.header .brand { font-size: 10px; color: var(--text2); font-weight: 400; letter-spacing: 0.04em; }
+.header .spacer { flex: 1; }
+.header .admin-btn {
+  background: none; border: 1px solid var(--border2); color: var(--text2);
+  border-radius: 16px; padding: 5px 12px; font-size: 11px; cursor: pointer; transition: 0.2s;
+}
+.header .admin-btn:hover { background: var(--bg-card2); color: var(--text); }
+.theme-switch {
+  display: flex; gap: 3px; background: var(--bg-card2); border-radius: 22px; padding: 3px; border: 1px solid var(--border2);
+}
+.theme-switch button {
+  width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+  transition: 0.25s; font-size: 14px; display: flex; align-items: center; justify-content: center; background: transparent;
+}
+.theme-switch button:hover { background: var(--bg-card); transform: scale(1.08); }
+.theme-switch button.active {
+  background: #fff; border-color: var(--accent);
+  box-shadow: 0 2px 10px var(--accent-glow); transform: scale(1.15);
+}
+
+/* ============================================================
+   主体
+   ============================================================ */
+/* 面板间装饰分隔 */
+.section-divider {
+  text-align: center; padding: 6px 0 2px; font-size: 10px;
+  color: var(--border); letter-spacing: 0.2em;
+  user-select: none; pointer-events: none;
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.main { padding: 8px 0; max-width: 540px; margin: 0 auto; }
+
+/* ============================================================
+   面板 — 轻盈卡片
+   ============================================================ */
+.panel {
+  background: var(--glass);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-radius: var(--radius);
+  border: 1px solid var(--border2);
+  margin: 8px 10px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+  opacity: 0.4;
+}
+#musicPanel::before {
+  background: linear-gradient(90deg, transparent, var(--music-accent), transparent);
+}
+.panel-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.panel-title {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 6px;
+}
+.panel-title .icon { font-size: 17px; }
+.panel-subtitle { font-size: 10px; color: var(--text2); font-weight: 400; letter-spacing: 0.03em; }
+.panel-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+
+/* 播放按钮 */
+.btn-play-small {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #fff; border: none;
+  font-size: 14px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  transition: 0.2s; box-shadow: 0 2px 8px var(--accent-glow);
+}
+.btn-play-small.music { background: var(--music-accent); box-shadow: 0 2px 8px var(--music-glow); }
+.btn-play-small:active { transform: scale(0.88); }
+.btn-select-sm {
+  background: var(--bg-card2); border: 1px solid var(--border2); color: var(--text3);
+  border-radius: 16px; padding: 5px 12px; font-size: 11px; cursor: pointer;
+  white-space: nowrap; transition: 0.15s; flex-shrink: 0; font-weight: 500;
+}
+.btn-select-sm:active { background: var(--border); transform: scale(0.95); }
+
+/* 选取弹出 */
+.select-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 150;
+  align-items: flex-end; justify-content: center;
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
+.select-overlay.show { display: flex; }
+.select-sheet {
+  background: var(--bg-card); border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 540px; max-height: 55vh; overflow-y: auto;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.12); padding: 18px;
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+}
+.select-sheet h4 { font-size: 15px; margin-bottom: 12px; color: var(--text); font-weight: 700; }
+.select-sheet .item {
+  display: flex; align-items: center; gap: 10px; padding: 12px 10px;
+  border-radius: 12px; cursor: pointer; font-size: 13px; color: var(--text);
+  transition: 0.15s; margin-bottom: 2px;
+}
+.select-sheet .item:hover, .select-sheet .item:active { background: var(--bg-card2); }
+.select-sheet .item.active { background: var(--accent-bg); color: var(--accent); font-weight: 700; }
+.select-sheet .close-sheet {
+  float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text2);
+}
+.select-sheet .empty-hint { font-size: 12px; color: var(--text2); text-align: center; padding: 24px 0; }
+
+.toggle-switch {
+  width: 42px; height: 24px; border-radius: 12px; background: var(--switch-off);
+  position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0; margin-left: auto;
+}
+.toggle-switch.on { background: var(--switch-on); }
+.toggle-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%; background: #fff;
+  transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.toggle-switch.on::after { left: 20px; }
+
+/* ============================================================
+   选中标签 — 胶囊形
+   ============================================================ */
+.selected-label {
+  padding: 10px 16px; margin-bottom: 14px;
+  background: var(--bg-card2); border: 1px solid var(--border2);
+  border-radius: 20px; font-size: 13px;
+  color: var(--text); cursor: pointer; transition: 0.2s;
+  display: flex; align-items: center; gap: 8px;
+  user-select: none; font-weight: 500;
+}
+.selected-label:hover { border-color: var(--accent2); background: var(--bg-card); }
+.selected-label:active { background: var(--accent-bg); transform: scale(0.98); }
+.selected-label .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.selected-label .arrow { font-size: 10px; color: var(--text2); }
+
+/* ============================================================
+   环境音 — 10段竖向均衡器
+   ============================================================ */
+.eq-vertical-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 8px 0 12px;
+  height: 185px;
+  margin-bottom: 6px;
+}
+.eq-vcol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.eq-vcol .v-val {
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 700;
+  min-width: 26px;
+  text-align: center;
+  transition: color 0.3s;
+}
+.eq-vcol input[type=range] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  -moz-appearance: slider-vertical;
+  width: 22px;
+  height: 125px;
+  background: linear-gradient(to top, var(--slider-track), var(--accent-bg));
+  border-radius: 11px;
+  outline: none;
+  cursor: pointer;
+}
+.eq-vcol input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--slider-ambi);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px var(--accent-glow);
+  transition: 0.15s;
+}
+.eq-vcol input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); box-shadow: 0 4px 12px var(--accent-glow); }
+.eq-vcol .v-freq {
+  font-size: 9px;
+  color: var(--text2);
+  font-weight: 500;
+}
+
+/* 动画行 */
+.anim-row {
+  display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--text2);
+  flex-wrap: wrap; padding: 6px 0 4px; border-top: 1px solid var(--border2);
+}
+.anim-row select, .anim-row input[type=range] {
+  font-size: 11px; padding: 4px 8px; border-radius: var(--radius-xs);
+  border: 1px solid var(--border); background: var(--bg-card); color: var(--text); outline: none;
+}
+.anim-row input[type=range] { width: 60px; height: 4px; }
+
+/* ============================================================
+   音乐 — 加载进度条
+   ============================================================ */
+#musicLoadBar {
+  display: none;
+  position: relative;
+  height: 14px; background: var(--border2); border-radius: 7px;
+  margin: 8px 0 6px; overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+}
+#musicLoadBar .fill {
+  height: 100%; border-radius: 7px;
+  width: 0%; transition: width 0.3s ease;
+  background: linear-gradient(90deg, #5e4ed4 0%, #7c6ff0 50%, #9b8ff8 100%);
+  background-size: 200% 100%;
+  animation: loadShimmer 2s ease-in-out infinite;
+}
+@keyframes loadShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+#musicLoadBar .pct {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-size: 9px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  z-index: 2; letter-spacing: 0.5px;
+}
+#musicLoadLabel {
+  display: none;
+  font-size: 12px; font-weight: 600; color: var(--music-accent); text-align: center; margin-bottom: 6px;
+}
+
+/* ============================================================
+   音乐 — 12路横向分轨
+   ============================================================ */
+.track-list { display: flex; flex-direction: column; gap: 6px; padding: 4px 0; }
+.track-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card2); border-radius: 12px;
+  padding: 8px 10px; transition: 0.2s;
+}
+.track-row:hover { background: var(--bg-card); }
+.track-label {
+  font-size: 11px; color: var(--music-accent); font-weight: 700;
+  width: 34px; text-align: center; flex-shrink: 0;
+}
+.track-row input[type=range] {
+  flex: 1;
+  -webkit-appearance: none; appearance: none;
+  height: 5px; background: linear-gradient(90deg, var(--music-bg), var(--music-border));
+  border-radius: 3px; outline: none; cursor: pointer;
+}
+.track-row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--music-accent); cursor: pointer;
+  border: 2px solid #fff; box-shadow: 0 2px 6px var(--music-glow);
+  transition: 0.15s;
+}
+.track-row input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); }
+.track-val {
+  font-size: 12px; color: var(--music-accent); font-weight: 700;
+  width: 34px; text-align: center; flex-shrink: 0;
+}
+/* 空轨 */
+.track-row.empty { opacity: 0.3; pointer-events: none; background: var(--bg-card2); }
+.track-row.empty .track-label, .track-row.empty .track-val { color: #aaa; }
+.track-row.empty input[type=range] { background: #e0e0e0; }
+.track-row.empty input[type=range]::-webkit-slider-thumb { background: #ccc; }
+
+/* ============================================================
+   预设按钮 — 柔软胶囊
+   ============================================================ */
+.preset-grid {
+  display: flex; flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border2);
+}
+.preset-grid button {
+  background: var(--bg-card2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text3);
+  transition: 0.2s;
+  white-space: nowrap;
+  text-align: center;
+  font-weight: 500;
+}
+.preset-grid button:hover {
+  background: var(--bg-card);
+  border-color: var(--accent2);
+  transform: translateY(-1px);
+}
+.preset-grid button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 700;
+  box-shadow: 0 3px 12px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   底部控制栏 — 磨砂玻璃
+   ============================================================ */
+.bottombar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bottombar-bg);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border2);
+  padding: 8px 16px; display: flex; align-items: center; gap: 10px;
+  z-index: 100;
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.04);
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.btn-play {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--accent); color: #fff; border: none;
+  font-size: 22px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  transition: 0.2s;
+  box-shadow: 0 3px 14px var(--accent-glow);
+}
+.btn-play:active { transform: scale(0.9); }
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  70% { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.master-wrap { flex: 1; display: flex; align-items: center; gap: 6px; max-width: 200px; }
+.master-wrap .label { font-size: 10px; color: var(--text2); white-space: nowrap; font-weight: 500; }
+.master-wrap input[type=range] {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 5px; background: var(--slider-track); border-radius: 3px; outline: none;
+}
+.master-wrap input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--text); cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.master-wrap .val { font-size: 11px; color: var(--text); font-weight: 700; min-width: 32px; }
+.status-text {
+  font-size: 10px; color: var(--text2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 90px;
+}
+.btn-small {
+  background: var(--bg-card2); border: 1px solid var(--border2); color: var(--text2);
+  border-radius: 16px; padding: 5px 10px; font-size: 10px; cursor: pointer; white-space: nowrap;
+  font-weight: 500; transition: 0.15s;
+}
+.btn-small:active { background: var(--border); }
+
+/* ============================================================
+   后台管理面板
+   ============================================================ */
+.admin-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200;
+  align-items: center; justify-content: center; padding: 16px;
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.admin-overlay.show { display: flex; }
+.admin-panel {
+  background: var(--bg-card); border-radius: var(--radius);
+  width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18); padding: 22px;
+}
+.admin-panel h3 { font-size: 16px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.admin-panel .close-btn { float: right; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text2); transition: 0.15s; }
+.admin-panel .close-btn:hover { color: var(--text); }
+.admin-section {
+  margin: 16px 0; padding: 14px; background: var(--bg-card2);
+  border-radius: var(--radius-sm); border: 1px solid var(--border2);
+}
+.admin-section h4 { font-size: 13px; color: var(--text); margin-bottom: 10px; font-weight: 700; }
+.admin-section label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.admin-section input[type=text],
+.admin-section input[type=file],
+.admin-section select {
+  width: 100%; padding: 8px 12px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-xs);
+  background: var(--bg-card); color: var(--text); margin-bottom: 8px; outline: none; font-family: inherit;
+  transition: 0.15s;
+}
+.admin-section input[type=text]:focus { border-color: var(--accent2); }
+.admin-section input[type=file] { padding: 4px; }
+.admin-section .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.admin-section button {
+  padding: 7px 16px; font-size: 12px; border-radius: 16px;
+  border: 1px solid var(--border); cursor: pointer; background: var(--bg-card); color: var(--text); transition: all 0.15s;
+  font-weight: 500;
+}
+.admin-section button:hover { background: var(--border2); }
+.admin-section button:active {
+  background: var(--accent); color: #fff; border-color: var(--accent3);
+  transform: scale(0.96); box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+.admin-section button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.admin-section button.primary:active { background: var(--accent3); }
+.admin-section button.danger { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+.admin-section button.danger:active { background: #c0392b; border-color: #a93226; }
+.admin-file-list { font-size: 11px; color: var(--text2); max-height: 120px; overflow-y: auto; }
+.admin-file-list div { padding: 4px 0; border-bottom: 1px solid var(--border2); display: flex; justify-content: space-between; align-items: center; }
+.admin-file-list .del { color: #e74c3c; cursor: pointer; font-size: 15px; padding: 2px 6px; }
+.upload-progress {
+  display: none;
+  height: 8px; background: var(--border2); border-radius: 4px; margin-top: 6px; overflow: hidden; position: relative;
+}
+.upload-progress .fill {
+  height: 100%; border-radius: 4px;
+  width: 0%; transition: width 0.3s ease;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  background-size: 200% 100%;
+  animation: uploadShimmer 1.5s ease-in-out infinite;
+}
+@keyframes uploadShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.upload-progress .pct {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-size: 8px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); z-index: 1;
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.btn-refreshing { animation: spin 0.8s linear infinite; display: inline-block; }
+.password-input {
+  font-size: 16px; text-align: center; letter-spacing: 6px; padding: 12px;
+  border: 2px solid var(--border); border-radius: var(--radius-sm); width: 100%; outline: none; font-family: inherit;
+  transition: 0.2s;
+}
+.password-input:focus { border-color: var(--accent); }
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (min-width: 600px) {
+  .eq-vertical-row { height: 210px; }
+  .eq-vcol input[type=range] { height: 145px; width: 26px; }
+}
+@media (max-width: 374px) {
+  .eq-vertical-row { height: 155px; gap: 1px; }
+  .eq-vcol input[type=range] { height: 100px; width: 18px; }
+  .eq-vcol .v-freq { font-size: 8px; }
+  .track-label { font-size: 10px; width: 28px; }
+  .preset-grid button { font-size: 10px; padding: 5px 10px; }
+}
+</style>
+
+</head>
+<body>
+
+<!-- ======= 顶部栏 ======= -->
+<div class="header">
+  <div class="logo">🎵 纳心音乐播放器</div>
+  <div class="brand">Naxin Player 桌面版 v1.7.3</div>
+  <div class="spacer"></div>
+  <div class="theme-switch">
+    <button onclick="setTheme('forest')" class="active" id="themeForest" title="森林绿">🌿</button>
+    <button onclick="setTheme('ocean')" id="themeOcean" title="深海蓝">🌊</button>
+    <button onclick="setTheme('warm')" id="themeWarm" title="暖阳橙">☀️</button>
+  </div>
+  <button class="admin-btn" onclick="showAdminLogin()">⚙ 管理</button>
+</div>
+
+<!-- ======= 主体 ======= -->
+<div class="main">
+
+  <!-- ===== 面板一：环境音均衡调节（10段竖向滑块） ===== -->
+  <div class="panel" id="ambientPanel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon">🌿</span> 环境音均衡调节
+        <span class="panel-subtitle">— 10段 · 频率选择</span>
+      </div>
+      <div class="panel-actions">
+        <button class="btn-select-sm" onclick="showAmbientPicker()">📂 选取</button>
+        <button class="btn-play-small" id="ambPlayBtn" onclick="toggleAmbientPlay()">▶</button>
+        <div class="toggle-switch on" id="ambientSwitch" onclick="toggleAmbient()"></div>
+      </div>
+    </div>
+    <!-- 当前选中场景 -->
+    <div class="selected-label" id="ambientLabel" onclick="showAmbientPicker()">🌿 点击选择场景 ▾</div>
+    <!-- 10段竖向均衡器 -->
+    <div class="eq-vertical-row" id="eqVerticalRow"></div>
+    <!-- 动画 -->
+    <div class="anim-row">
+      <span>🎚 波动速度</span>
+      <input type="range" min="0.125" max="8" step="0.125" value="1" id="animSpeed" oninput="setAnimSpeed(this.value)">
+      <span id="animSpeedLabel">x1</span>
+      <span>| 模式</span>
+      <select id="animMode" onchange="setAnimMode(this.value)">
+        <option value="soft">柔波</option>
+        <option value="hard">涌动</option>
+        <option value="solo">独奏</option>
+      </select>
+    </div>
+    <!-- 环境音EQ功效预设 -->
+    <div class="preset-grid" id="ambientPresets">
+      <button onclick="applyPreset('amb_focus')">🎯 专注</button>
+      <button onclick="applyPreset('amb_meditate')">🧘 冥想</button>
+      <button onclick="applyPreset('amb_sleep')">🌙 睡眠</button>
+      <button onclick="applyPreset('amb_read')">📖 阅读</button>
+      <button onclick="applyPreset('amb_relax')">💆 放松</button>
+      <button onclick="applyPreset('amb_forest')">🌲 森林</button>
+      <button onclick="applyPreset('amb_rain')">🌧 雨夜</button>
+      <button onclick="applyPreset('amb_ocean_p')">🌊 海浪</button>
+    </div>
+    <div style="font-size:9px;color:var(--text2);text-align:center;margin-top:2px;line-height:1.4;">
+      基于粉红噪声 · 脑波同频 · 索尔菲乔频率 · Fletcher-Munson等响曲线
+    </div>
+  </div>
+
+  <!-- 装饰分隔 -->
+  <div class="section-divider"><span>◇</span></div>
+
+  <!-- ===== 面板二：音乐分轨（12路横向滑块） ===== -->
+  <div class="panel" id="musicPanel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon">🎹</span> 音乐分轨
+        <span class="panel-subtitle">— 12路独立控制</span>
+      </div>
+      <div class="panel-actions">
+        <button class="btn-select-sm" onclick="showMusicPicker()">📂 选取</button>
+        <button class="btn-play-small music" id="musPlayBtn" onclick="toggleMusicPlay()">▶</button>
+        <div class="toggle-switch on" id="musicSwitch" onclick="toggleMusic()"></div>
+      </div>
+    </div>
+    <!-- 当前选中曲目 -->
+    <div class="selected-label" id="musicLabel" onclick="showMusicPicker()">🎹 点击选择曲目 ▾</div>
+    <!-- 加载进度条 -->
+    <div id="musicLoadLabel">⏳ 加载分轨中... <span id="musicLoadText">0/0</span></div>
+    <div id="musicLoadBar"><div class="fill" id="musicLoadFill"></div><span class="pct" id="musicLoadPct"></span></div>
+    <!-- 12路横向滑块 -->
+    <div class="track-list" id="musicSliders"></div>
+    <!-- 音乐分轨混音预设 -->
+    <div class="preset-grid" id="musicPresets">
+      <button onclick="applyPreset('mus_default')">🎹 默认</button>
+      <button onclick="applyPreset('mus_soft')">🌸 轻柔</button>
+      <button onclick="applyPreset('mus_full')">🔊 饱满</button>
+      <button onclick="applyPreset('mus_sparse')">🍃 疏朗</button>
+      <button onclick="applyPreset('mus_dream')">💫 梦幻</button>
+      <button onclick="applyPreset('mus_classic')">🎻 古典</button>
+      <button onclick="applyPreset('mus_rhythm')">🥁 律动</button>
+      <button onclick="applyPreset('mus_ethereal')">🌌 空灵</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======= 底部控制栏 ======= -->
+<div class="bottombar">
+  <button class="btn-play" id="playBtn" onclick="togglePlay()">▶</button>
+  <div class="master-wrap">
+    <span class="label">总音量</span>
+    <input type="range" min="0" max="100" value="75" id="masterVol" oninput="setMasterVol(this.value)">
+    <span class="val" id="masterVolLabel">75%</span>
+  </div>
+  <span class="status-text" id="statusInfo">就绪</span>
+  <button class="btn-small" onclick="toggleLoop()" id="loopBtn">🔁 循环</button>
+</div>
+
+<!-- ======= 选取弹窗 ======= -->
+<div class="select-overlay" id="ambientPickerOverlay">
+  <div class="select-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h4 style="margin:0;">🌿 选择环境音场景</h4>
+      <button class="close-sheet" onclick="closePicker('ambient')">✕</button>
+    </div>
+    <div id="ambientPickerList"><div class="empty-hint">暂无场景，请通过管理后台上传</div></div>
+  </div>
+</div>
+<div class="select-overlay" id="musicPickerOverlay">
+  <div class="select-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h4 style="margin:0;">🎹 选择音乐曲目</h4>
+      <button class="close-sheet" onclick="closePicker('music')">✕</button>
+    </div>
+    <div id="musicPickerList"><div class="empty-hint">暂无曲目，请通过管理后台上传</div></div>
+  </div>
+</div>
+
+<!-- ======= 后台管理面板 ======= -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel" id="adminPanel">
+    <div id="adminLogin">
+      <h3>🔐 管理登录</h3>
+      <p style="font-size:11px;color:var(--text2);margin:8px 0;">请输入管理密码</p>
+      <input type="password" class="password-input" id="adminPwd" placeholder="输入管理密码" maxlength="20" onkeydown="if(event.key==='Enter')adminLogin()">
+      <div style="text-align:center;margin-top:8px;">
+        <button class="btn-small primary" onclick="adminLogin()">登录</button>
+        <button class="btn-small" onclick="closeAdmin()">取消</button>
+      </div>
+    </div>
+    <div id="adminContent" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3>⚙ 素材管理后台</h3>
+        <button class="close-btn" onclick="closeAdmin()">✕</button>
+      </div>
+      <div class="admin-section">
+        <h4>🌿 环境音场景管理</h4>
+        <label>场景名称</label>
+        <input type="text" id="ambientName" placeholder="例如：森林·鸟鸣溪流">
+        <label>环境音文件 <span style="color:var(--text2);font-size:10px;">（支持 MP3 / OGG / WAV / AAC / M4A / FLAC / WebM）</span></label>
+        <input type="file" id="ambientFile" accept="audio/*,.mp3,.ogg,.wav,.aac,.m4a,.flac,.webm">
+        <div class="btn-row">
+          <button class="primary" id="ambUploadBtn" onclick="uploadAmbient()">📤 上传场景</button>
+          <button id="ambRefreshBtn" onclick="refreshAmbientFiles()"><span id="ambRefreshIcon">🔄</span> 刷新列表</button>
+        </div>
+        <div class="upload-progress" id="ambUploadProg"><div class="fill"></div><span class="pct"></span></div>
+        <div class="admin-file-list" id="ambientFileList"><div style="color:var(--text2);">加载中...</div></div>
+      </div>
+      <div class="admin-section">
+        <h4>🎹 音乐曲目管理</h4>
+        <label>曲目名称</label>
+        <input type="text" id="musicTrackName" placeholder="例如：森林晨曦">
+        <label>分轨文件（可多选，按选择顺序对应第1-12路）<span style="color:var(--text2);font-size:10px;">（支持 MP3 / OGG / WAV / AAC / M4A / FLAC / WebM，最多12个）</span></label>
+        <input type="file" id="musicFiles" accept="audio/*,.mp3,.ogg,.wav,.aac,.m4a,.flac,.webm" multiple>
+        <div class="btn-row">
+          <button class="primary" id="musUploadBtn" onclick="uploadMusic()">📤 上传曲目</button>
+          <button id="musRefreshBtn" onclick="refreshMusicFiles()"><span id="musRefreshIcon">🔄</span> 刷新列表</button>
+        </div>
+        <div class="upload-progress" id="musUploadProg"><div class="fill"></div><span class="pct"></span></div>
+        <div class="admin-file-list" id="musicFileList"><div style="color:var(--text2);">加载中...</div></div>
+      </div>
+      <div class="admin-section">
+        <h4>📦 存储用量</h4>
+        <p style="font-size:12px;color:var(--text);">
+          <span id="dbUsage">计算中...</span>
+        </p>
+        <p style="font-size:10px;color:var(--text2);margin-top:4px;">
+          🌿 <span id="ambientCount">-</span> 个环境音 · 🎹 <span id="musicCount">-</span> 首曲目
+        </p>
+        <div class="btn-row">
+          <button class="danger" onclick="clearAllData()">🗑 清空全部数据</button>
+          <button onclick="exportConfig()">📋 导出配置</button>
+        </div>
+      </div>
+      <button class="btn-small" style="margin-top:12px;width:100%;" onclick="closeAdmin()">关闭管理面板</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  数据存储 — IndexedDB 本地版
+// ============================================================
+const DB_NAME = 'naxin_standalone', DB_VERSION = 1;
+let db = null;
+
+async function openDB() {
+  try {
+    return new Promise((resolve) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains('ambient_files')) d.createObjectStore('ambient_files', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('music_files')) d.createObjectStore('music_files', { keyPath: 'id' });
+      };
+      req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      req.onerror = () => { db = null; resolve(null); };
+    });
+  } catch { db = null; }
+}
+
+function idbReq(store, mode) { const tx = db.transaction(store, mode); return tx.objectStore(store); }
+
+async function dbGetAll(s) {
+  const store = s === 'ambient_files' ? 'ambient_files' : 'music_files';
+  return new Promise((resolve, reject) => {
+    const req = idbReq(store, 'readonly').getAll();
+    req.onsuccess = () => resolve(req.result.map(r => {
+      // 返回元数据（不含 ArrayBuffer 数据体）
+      const m = { id: r.id, name: r.name };
+      if (s === 'ambient_files') { m.fileName = r.fileName; m.fileSize = r.fileSize; }
+      else { m.channelCount = r.channelCount; m.fileNames = r.fileNames; }
+      return m;
+    }));
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbGet(s, k) {
+  const store = s === 'ambient_files' ? 'ambient_files' : 'music_files';
+  return new Promise((resolve, reject) => {
+    const req = idbReq(store, 'readonly').get(k);
+    req.onsuccess = () => {
+      const r = req.result;
+      if (!r) return resolve(null);
+      if (s === 'ambient_files') resolve(r.data); // ArrayBuffer
+      else resolve({ id: r.id, name: r.name, channelCount: r.channelCount, fileNames: r.fileNames }); // metadata
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbPut(s, d) {
+  const store = s === 'ambient_files' ? 'ambient_files' : 'music_files';
+  const id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+  const rec = { id, name: d.name };
+  if (s === 'ambient_files') {
+    rec.data = d.data; rec.fileName = d.fileName; rec.fileSize = d.fileSize; rec.fileType = d.fileType;
+  } else {
+    rec.channels = d.channels; rec.fileNames = d.fileNames; rec.channelCount = d.channelCount;
+  }
+  return new Promise((resolve, reject) => {
+    const req = idbReq(store, 'readwrite').put(rec);
+    req.onsuccess = () => resolve({ id, name: d.name, channelCount: d.channelCount || 1 });
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbDelete(s, k) {
+  const store = s === 'ambient_files' ? 'ambient_files' : 'music_files';
+  return new Promise((resolve, reject) => {
+    const req = idbReq(store, 'readwrite').delete(k);
+    req.onsuccess = () => resolve({ ok: true });
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbClear(s) {
+  const store = s === 'ambient_files' ? 'ambient_files' : 'music_files';
+  return new Promise((resolve, reject) => {
+    const req = idbReq(store, 'readwrite').clear();
+    req.onsuccess = () => resolve({ ok: true });
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// 获取音乐分轨的单个 channel ArrayBuffer
+async function dbGetM(s, id, ch) {
+  const store = s === 'ambient_files' ? 'ambient_files' : 'music_files';
+  return new Promise((resolve, reject) => {
+    const req = idbReq(store, 'readonly').get(id);
+    req.onsuccess = () => {
+      const r = req.result;
+      if (!r || !r.channels || !r.channels[ch]) return resolve(null);
+      resolve(r.channels[ch]);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// ============================================================
+//  全局状态
+// ============================================================
+const state = {
+  ambientPlaying: false, musicPlaying: false, masterVol: 0.75, ambientOn: true, musicOn: true, loop: true,
+  animSpeed: 1, animMode: 'soft', currentAmbientId: null, currentMusicId: null,
+  loadingMusic: false, // 防止重复加载
+};
+const EQ10_BANDS = [
+  { freq: 32,   label: '32' },
+  { freq: 64,   label: '64' },
+  { freq: 125,  label: '125' },
+  { freq: 250,  label: '250' },
+  { freq: 500,  label: '500' },
+  { freq: 1000, label: '1k' },
+  { freq: 2000, label: '2k' },
+  { freq: 4000, label: '4k' },
+  { freq: 8000, label: '8k' },
+  { freq: 16000,label: '16k' },
+];
+let audioCtx = null, masterGain = null;
+let ambientSource = null, ambientFilters = [], ambientBuffer = null;
+let musicSources = [], musicBuffers = [];
+let animInterval = null;
+
+// ============================================================
+//  主题
+// ============================================================
+function setTheme(name) {
+  document.body.classList.remove('theme-ocean', 'theme-warm');
+  if (name === 'ocean') document.body.classList.add('theme-ocean');
+  if (name === 'warm') document.body.classList.add('theme-warm');
+  document.querySelectorAll('.theme-switch button').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('theme' + name.charAt(0).toUpperCase() + name.slice(1));
+  if (btn) btn.classList.add('active');
+  localStorage.setItem('naxin_theme', name);
+}
+
+// ============================================================
+//  音频引擎
+// ============================================================
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = state.masterVol;
+    masterGain.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function setMasterVol(v) {
+  state.masterVol = v / 100;
+  document.getElementById('masterVolLabel').textContent = v + '%';
+  if (masterGain) masterGain.gain.setTargetAtTime(state.masterVol, audioCtx.currentTime, 0.05);
+}
+function generateDemoNoise(dur) {
+  const sr = audioCtx.sampleRate, len = sr * (dur || 60);
+  const buf = audioCtx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buf.getChannelData(ch);
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + w * 0.0555179;
+      b1 = 0.99332 * b1 + w * 0.0750759;
+      b2 = 0.96900 * b2 + w * 0.1538520;
+      data[i] = (b0 + b1 + b2 + w * 0.5362) * 0.11;
+    }
+  }
+  return buf;
+}
+
+// ============================================================
+//  环境音（10段串联Peaking滤波器 — 真正图形均衡器）
+// ============================================================
+// 架构：源 → Peaking(32Hz) → Peaking(64Hz) → ... → Peaking(16kHz) → 输出
+// 滑块0=最大削减(-40dB)，50=零影响，100=最大增强(+40dB)
+async function loadAmbientBuffer(id) {
+  const data = await dbGet('ambient_files', id);  // 返回服务器上的原始音频ArrayBuffer
+  if (!data || data.byteLength === 0) return null;
+  return audioCtx.decodeAudioData(data.slice(0));
+}
+async function selectAmbient(id) {
+  if (state.currentAmbientId === id) return;
+  ensureAudioCtx();
+  state.currentAmbientId = id;
+  if (state.ambientPlaying) { stopAmbient(); state.ambientPlaying = false; }
+  try {
+    ambientBuffer = await loadAmbientBuffer(id);
+    if (!ambientBuffer) throw new Error('未找到');
+    // 自动开始播放
+    startAmbient(); state.ambientPlaying = true;
+    syncPlayBtn();
+    updateAmbientLabel();
+    const files = await dbGetAll('ambient_files');
+    const f = files.find(x => x.id === id);
+    setStatus(f ? `正在播放：${f.name}` : '环境音播放中');
+  } catch(e) {
+    ambientBuffer = null;
+    updateAmbientLabel();
+    setStatus('环境音加载失败: ' + (e.message||'未知错误'));
+  }
+}
+function startAmbient() {
+  stopAmbient();
+  if (!ambientBuffer || !state.ambientOn) return;
+  ambientFilters = [];
+  
+  // 构建串联链：每个peaking滤波器输出连到下一个
+  let prevNode = null;
+  const src = audioCtx.createBufferSource();
+  src.buffer = ambientBuffer; src.loop = state.loop;
+  
+  EQ10_BANDS.forEach((band, i) => {
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'peaking';
+    filter.frequency.value = band.freq;
+    filter.Q.value = 1.0;
+    const slider = document.querySelector(`input[data-eq="${i}"]`);
+    const sliderVal = slider ? parseInt(slider.value) : 50;
+    // 映射 0-100 → -40dB ~ +40dB（50=0dB中心）
+    filter.gain.value = (sliderVal - 50) * 0.8;
+    
+    if (i === 0) {
+      src.connect(filter);
+    } else {
+      prevNode.connect(filter);
+    }
+    prevNode = filter;
+    ambientFilters.push({ filter });
+  });
+  
+  // 最后一环连接到输出
+  if (prevNode) prevNode.connect(masterGain);
+  else src.connect(masterGain);
+  
+  src.start(0);
+  ambientSource = src;
+}
+function stopAmbient() { try { ambientSource && ambientSource.stop(); } catch(e) {} ambientSource = null; ambientFilters = []; }
+function restartAmbient() { stopAmbient(); if (state.ambientOn && ambientBuffer) startAmbient(); }
+function setAmbientBand(i, val) {
+  const v = parseInt(val);
+  const labelEl = document.getElementById('eqVal' + i);
+  if (labelEl) labelEl.textContent = v;
+  // peaking滤波器：0=-40dB, 50=0dB, 100=+40dB
+  if (ambientFilters[i] && ambientFilters[i].filter)
+    ambientFilters[i].filter.gain.setTargetAtTime((v - 50) * 0.8, audioCtx.currentTime, 0.05);
+}
+function toggleAmbient() {
+  state.ambientOn = !state.ambientOn;
+  document.getElementById('ambientSwitch').classList.toggle('on', state.ambientOn);
+  if (!state.ambientOn) { stopAmbient(); state.ambientPlaying = false; syncPlayBtn(); }
+  else if (state.ambientPlaying) startAmbient();
+}
+function toggleAmbientPlay() {
+  if (state.ambientPlaying) { stopAmbient(); state.ambientPlaying = false; syncPlayBtn(); setStatus('环境音已暂停'); }
+  else if (state.ambientOn) {
+    if (!ambientBuffer && !state.currentAmbientId) { setStatus('⚠ 请先选取环境音场景再播放'); return; }
+    if (!ambientBuffer) {
+      // 有选中ID但buffer未加载，异步加载后播放
+      ensureAudioCtx();
+      loadAmbientBuffer(state.currentAmbientId).then(buf => { ambientBuffer = buf; startAmbientOnly(); state.ambientPlaying = true; syncPlayBtn(); setStatus('环境音播放中...'); }).catch(() => setStatus('⚠ 环境音加载失败'));
+      return;
+    }
+    ensureAudioCtx(); startAmbientOnly(); state.ambientPlaying = true; syncPlayBtn(); setStatus('环境音播放中...');
+  }
+}
+
+// ============================================================
+//  音乐分轨（12路独立GainNode）
+// ============================================================
+async function loadMusicBuffers(id, onProgress) {
+  const meta = await dbGet('music_files', id);  // JSON { id, name, channelCount, fileNames }
+  if (!meta || !meta.channelCount) return [];
+  // 并行下载+解码所有分轨 — 12路同时请求，不串行等
+  let completed = 0;
+  const total = Math.min(meta.channelCount, 12);
+  const promises = [];
+  for (let i = 0; i < total; i++) {
+    promises.push((async (ch) => {
+      try {
+        const data = await dbGetM('music_files', id, ch);
+        const buf = await audioCtx.decodeAudioData(data.slice(0));
+        completed++;
+        if (onProgress) onProgress(completed, total);
+        return buf;
+      } catch(e) {
+        completed++;
+        if (onProgress) onProgress(completed, total);
+        return null;
+      }
+    })(i));
+  }
+  const bufs = await Promise.all(promises);
+  // 补齐到12路，空位填null
+  while (bufs.length < 12) bufs.push(null);
+  return bufs;
+}
+// 更新12轨UI状态：有空音频数据=亮，无=灰
+function updateTrackStates() {
+  for (let i = 0; i < 12; i++) {
+    const row = document.getElementById('trackRow' + i);
+    if (!row) continue;
+    if (musicBuffers[i]) {
+      row.classList.remove('empty');
+    } else {
+      row.classList.add('empty');
+    }
+  }
+}
+async function selectMusic(id) {
+  if (state.currentMusicId === id) return;
+  ensureAudioCtx();
+  state.currentMusicId = id;
+  musicBuffers = [];
+  updateTrackStates();
+  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; }
+  state.loadingMusic = true;
+  const progBar = document.getElementById('musicLoadBar');
+  const progLabel = document.getElementById('musicLoadLabel');
+  const progFill = document.getElementById('musicLoadFill');
+  const progText = document.getElementById('musicLoadText');
+  const progPct = document.getElementById('musicLoadPct');
+  progBar.style.display = 'block';
+  progLabel.style.display = 'block';
+  progFill.style.width = '0%';
+  progText.textContent = '0/?';
+  progPct.textContent = '';
+  setStatus('⏳ 加载分轨中...');
+  try {
+    musicBuffers = await loadMusicBuffers(id, (done, total) => {
+      const pct = total > 0 ? Math.round(done / total * 100) : 0;
+      progFill.style.width = pct + '%';
+      progText.textContent = done + '/' + total;
+      progPct.textContent = pct + '%';
+      setStatus(`⏳ 加载分轨中... ${done}/${total}`);
+    });
+    updateTrackStates();
+    const loaded = musicBuffers.filter(b => b).length;
+    progFill.style.width = '100%';
+    progText.textContent = loaded + '/' + loaded + ' ✓';
+    progPct.textContent = '100% ✓';
+    // 加载完成后自动播放
+    startMusicOnly(); state.musicPlaying = true;
+    syncPlayBtn(); updateMusicLabel();
+    const files = await dbGetAll('music_files');
+    const f = files.find(x => x.id === id);
+    setStatus(f ? `正在播放：${f.name}（${loaded}/12路）` : `音乐播放中（${loaded}/12路）`);
+    setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1500);
+  } catch(e) {
+    musicBuffers = [];
+    progBar.style.display = 'none';
+    progLabel.style.display = 'none';
+    updateMusicLabel();
+    setStatus('曲目加载失败: ' + (e.message||'未知错误'));
+  }
+  state.loadingMusic = false;
+}
+function startMusic() {
+  stopMusic();
+  if (!state.musicOn || musicBuffers.length === 0) return;
+  musicSources = [];
+  for (let i = 0; i < 12; i++) {
+    if (!musicBuffers[i]) continue;
+    const src = audioCtx.createBufferSource();
+    src.buffer = musicBuffers[i]; src.loop = state.loop;
+    const gain = audioCtx.createGain();
+    const slider = document.querySelector(`input[data-ch="${i}"]`);
+    gain.gain.value = slider ? parseInt(slider.value) / 100 : 0.5;
+    src.connect(gain).connect(masterGain);
+    src.start(0);
+    musicSources.push({ source: src, gainNode: gain, ch: i });
+  }
+}
+function stopMusic() { musicSources.forEach(s => { try { s.source.stop(); } catch(e) {} }); musicSources = []; }
+function restartMusic() { stopMusic(); if (state.musicOn && musicBuffers.length > 0) startMusic(); }
+function setMusicGain(ch, val) {
+  const v = val / 100;
+  const labelEl = document.getElementById('musicVal' + ch);
+  if (labelEl) labelEl.textContent = val;
+  const src = musicSources.find(s => s.ch === ch);
+  if (src && src.gainNode) src.gainNode.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
+}
+function toggleMusic() {
+  state.musicOn = !state.musicOn;
+  document.getElementById('musicSwitch').classList.toggle('on', state.musicOn);
+  if (!state.musicOn) { stopMusic(); state.musicPlaying = false; syncPlayBtn(); }
+  else if (state.musicPlaying) startMusic();
+}
+function toggleMusicPlay() {
+  if (state.musicPlaying) { stopMusic(); state.musicPlaying = false; syncPlayBtn(); setStatus('音乐已暂停'); }
+  else if (state.musicOn) {
+    if (state.loadingMusic) { setStatus('⏳ 分轨加载中，请稍候再播...'); return; }
+    if ((!musicBuffers || musicBuffers.length === 0) && !state.currentMusicId) { setStatus('⚠ 请先选取音乐曲目再播放'); return; }
+    if (!musicBuffers || musicBuffers.length === 0) {
+      ensureAudioCtx();
+      state.loadingMusic = true;
+      const progBar = document.getElementById('musicLoadBar');
+      const progLabel = document.getElementById('musicLoadLabel');
+      const progFill = document.getElementById('musicLoadFill');
+      const progText = document.getElementById('musicLoadText');
+      const progPct = document.getElementById('musicLoadPct');
+      progBar.style.display = 'block';
+      progLabel.style.display = 'block';
+      progFill.style.width = '0%';
+      progText.textContent = '0/?';
+      progPct.textContent = '';
+      loadMusicBuffers(state.currentMusicId, (done, total) => {
+        const pct = total > 0 ? Math.round(done / total * 100) : 0;
+        progFill.style.width = pct + '%';
+        progText.textContent = done + '/' + total;
+        progPct.textContent = pct + '%';
+      }).then(bufs => {
+        musicBuffers = bufs; state.loadingMusic = false; updateTrackStates();
+        progFill.style.width = '100%';
+        progPct.textContent = '100% ✓';
+        setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1500);
+        startMusicOnly(); state.musicPlaying = true; syncPlayBtn(); setStatus('音乐播放中...');
+      }).catch(() => {
+        state.loadingMusic = false;
+        progBar.style.display = 'none'; progLabel.style.display = 'none';
+        setStatus('⚠ 曲目加载失败');
+      });
+      return;
+    }
+    ensureAudioCtx(); startMusicOnly(); state.musicPlaying = true; syncPlayBtn(); setStatus('音乐播放中...');
+  }
+}
+
+// ============================================================
+//  播放控制
+// ============================================================
+// 三键联动：根据两个均衡器的播放状态，统一更新总键+分键
+function syncPlayBtn() {
+  const anyPlaying = state.ambientPlaying || state.musicPlaying;
+  document.getElementById('playBtn').textContent = anyPlaying ? '⏸' : '▶';
+  document.getElementById('ambPlayBtn').textContent = state.ambientPlaying ? '⏸' : '▶';
+  document.getElementById('musPlayBtn').textContent = state.musicPlaying ? '⏸' : '▶';
+}
+function togglePlay() {
+  const anyPlaying = state.ambientPlaying || state.musicPlaying;
+  if (anyPlaying) { stopAll(); state.ambientPlaying = false; state.musicPlaying = false; syncPlayBtn(); setStatus('全部停止'); }
+  else {
+    const hasAmbient = ambientBuffer || state.currentAmbientId;
+    const hasMusic = (musicBuffers && musicBuffers.length > 0) || state.currentMusicId;
+    if (!hasAmbient && !hasMusic) { setStatus('⚠ 请先选取环境音或音乐再播放'); return; }
+    if (state.loadingMusic) { setStatus('⏳ 音乐分轨加载中，请稍候...'); return; }
+    ensureAudioCtx();
+    if (hasAmbient && !ambientBuffer) loadAmbientBuffer(state.currentAmbientId).then(buf => { ambientBuffer = buf; startAmbientOnly(); startAnimation(); }).catch(()=>{});
+    else if (hasAmbient) { startAmbientOnly(); }
+    if (hasMusic && (!musicBuffers||musicBuffers.length===0)) {
+      state.loadingMusic = true;
+      const progBar = document.getElementById('musicLoadBar');
+      const progLabel = document.getElementById('musicLoadLabel');
+      const progFill = document.getElementById('musicLoadFill');
+      const progText = document.getElementById('musicLoadText');
+      const progPct = document.getElementById('musicLoadPct');
+      progBar.style.display = 'block';
+      progLabel.style.display = 'block';
+      progFill.style.width = '0%';
+      progText.textContent = '0/?';
+      progPct.textContent = '';
+      loadMusicBuffers(state.currentMusicId, (done, total) => {
+        const pct = total > 0 ? Math.round(done / total * 100) : 0;
+        progFill.style.width = pct + '%';
+        progText.textContent = done + '/' + total;
+        progPct.textContent = pct + '%';
+      }).then(bufs => {
+        musicBuffers = bufs; state.loadingMusic = false; updateTrackStates();
+        progFill.style.width = '100%';
+        progPct.textContent = '100% ✓';
+        setTimeout(() => { progBar.style.display = 'none'; progLabel.style.display = 'none'; }, 1500);
+        startMusicOnly();
+      }).catch(() => {
+        state.loadingMusic = false;
+        progBar.style.display = 'none'; progLabel.style.display = 'none';
+      });
+    }
+    else if (hasMusic) { startMusicOnly(); }
+    if (hasAmbient) state.ambientPlaying = true;
+    if (hasMusic) state.musicPlaying = true;
+    syncPlayBtn();
+    setStatus('全部播放中...');
+  }
+}
+function startAll() { startAmbientOnly(); startMusicOnly(); }
+function startAmbientOnly() { if (state.ambientOn && ambientBuffer) startAmbient(); startAnimation(); }
+function startMusicOnly() { if (state.musicOn && musicBuffers.length > 0) startMusic(); }
+function stopAll() { stopAmbient(); stopMusic(); stopAnimation(); }
+function toggleLoop() {
+  state.loop = !state.loop;
+  document.getElementById('loopBtn').textContent = state.loop ? '🔁 循环' : '🔂 单次';
+  if (state.ambientPlaying || state.musicPlaying) { stopAll(); if (state.ambientPlaying) startAmbientOnly(); if (state.musicPlaying) startMusicOnly(); }
+}
+
+// ============================================================
+//  LFO动画
+// ============================================================
+function startAnimation() {
+  stopAnimation();
+  if (state.animSpeed <= 0) return;
+  const iv = Math.max(100, 2000 / state.animSpeed);
+  animInterval = setInterval(() => {
+    if (!state.ambientPlaying && !state.musicPlaying) return;
+    ambientFilters.forEach((nf, i) => {
+      if (!nf || !nf.gainNode) return;
+      const slider = document.querySelector(`input[data-eq="${i}"]`);
+      const base = slider ? parseInt(slider.value) / 100 : 0.5;
+      let delta = 0;
+      if (state.animMode === 'soft') delta = (Math.random() - 0.5) * 0.12;
+      else if (state.animMode === 'hard') delta = (Math.random() - 0.5) * 0.30;
+      else if (state.animMode === 'solo') delta = (i === Math.floor(Math.random()*10)) ? 0.25 : -0.08;
+      nf.gainNode.gain.setTargetAtTime(Math.max(0, Math.min(1, base + delta)), audioCtx.currentTime, 0.1);
+    });
+  }, iv);
+}
+function stopAnimation() { if (animInterval) clearInterval(animInterval); animInterval = null; }
+function setAnimSpeed(v) { state.animSpeed = parseFloat(v); document.getElementById('animSpeedLabel').textContent = 'x' + v; if (state.ambientPlaying || state.musicPlaying) startAnimation(); }
+function setAnimMode(v) { state.animMode = v; if (state.ambientPlaying || state.musicPlaying) startAnimation(); }
+
+// ============================================================
+//  8+8 预设系统
+// ============================================================
+const PRESETS = {
+  // ============================================================
+  // 环境音预设（10段peaking, 0=-40dB, 50=零影响, 100=+40dB）
+  // 科学依据：粉红噪声、脑波同频(Delta/Theta/Alpha/Beta)、
+  // 索尔菲乔频率(174/396/528/639/741/852Hz)、Fletcher-Munson等响曲线
+  // ============================================================
+  amb_default:   { eq: [50,50,50,50,50,50,50,50,50,50] },
+  amb_focus:     { eq: [30,35,40,48,58,63,65,60,50,42] },
+    // 专注(Beta波)：减125Hz↓隆隆干扰, 提升1-4kHz语音清晰度(Fletcher-Munson人耳最敏感区)
+  amb_meditate:  { eq: [53,58,60,57,55,50,48,45,42,38] },
+    // 冥想(Theta波)：温暖低频包裹, 528Hz索尔菲乔区微升, 高频柔和衰减
+  amb_sleep:     { eq: [65,60,55,50,45,40,36,33,30,28] },
+    // 睡眠(Delta波)：粉红噪声响应(-3dB/oct), 模拟母体环境, 高频逐步静音
+  amb_read:      { eq: [33,40,48,55,60,62,58,53,47,42] },
+    // 阅读(Alpha波)：减32Hz轰隆, 男声85-255Hz/女声165-255Hz基频保留, 1-4kHz辅音清晰
+  amb_relax:     { eq: [48,53,56,55,53,50,48,45,43,42] },
+    // 放松(Alpha波)：温暖平衡≈粉红噪声, 396Hz索尔菲乔"释放恐惧"区(250+500)
+  amb_forest:    { eq: [45,48,50,48,50,53,58,63,60,55] },
+    // 森林：保留低频地面感, 鸟鸣3-8kHz提升, 741Hz索尔菲乔区, 叶响8-16kHz
+  amb_rain:      { eq: [35,40,45,50,58,62,60,55,52,50] },
+    // 雨夜：减32Hz雷声轰隆, 雨滴500-2k核心, 639Hz索尔菲乔区, 保留8k+嘶嘶氛围
+  amb_ocean_p:   { eq: [72,66,60,52,46,43,40,45,48,45] },
+    // 海浪：20-250Hz海浪能量核心(指数衰减), 4-8kHz浪花泡沫微回升, 852Hz索尔菲乔区
+  // ============================================================
+  // 音乐预设（12路分轨音量值, 0-100）
+  // 注意：12路乐器由用户上传决定, 无固定映射, 以下为通用混音风格
+  // 假设：路1-4主奏/旋律, 路5-8和声/伴奏, 路9-12贝斯/节奏/环境
+  // ============================================================
+  mus_default:   { music: [75,70,65,60,55,55,50,50,55,55,50,45] },
+    // 默认：平衡混合, 前路旋律稍突出
+  mus_soft:      { music: [55,50,45,55,45,40,35,30,40,35,25,20] },
+    // 轻柔：整体压抑, 中频为主, 适合背景聆听
+  mus_full:      { music: [85,80,75,85,75,70,65,60,70,65,55,50] },
+    // 饱满：全动态, 路1-4旋律+和声突出, 电影感
+  mus_sparse:    { music: [70,50,30,60,35,25,20,15,25,15,10,8] },
+    // 疏朗：极简编配, 仅前4路活跃, 后8路大幅衰减
+  mus_dream:     { music: [35,45,55,40,50,65,55,35,60,50,40,25] },
+    // 梦幻：中高路突出(5-9路氛围层), 混响/延迟感
+  mus_classic:   { music: [80,75,45,40,35,55,50,40,45,35,30,25] },
+    // 古典：前2路主奏前置(管弦乐独奏惯例), 中间适度, 低频克制
+  mus_rhythm:    { music: [45,35,25,80,85,70,65,75,60,50,45,70] },
+    // 律动：4-7路节奏组突出(鼓/打击/贝斯), 12路低频补充
+  mus_ethereal:  { music: [25,35,45,35,40,60,55,20,35,50,30,15] },
+    // 空灵：中高6-7路突出, 低频1-4路大幅衰减, 去根基留飘渺
+};
+function applyPreset(name) {
+  const p = PRESETS[name]; if (!p) return;
+  if (p.eq) {
+    // 环境音预设：设置10段EQ滑块和GainNode
+    p.eq.forEach((v, i) => { const input = document.querySelector(`input[data-eq="${i}"]`); if (input) { input.value = v; setAmbientBand(i, v); } });
+    // 高亮当前预设按钮
+    document.querySelectorAll('#ambientPresets button').forEach(b => b.classList.remove('active'));
+    const ambBtn = document.querySelector(`#ambientPresets button[onclick*="${name}"]`);
+    if (ambBtn) ambBtn.classList.add('active');
+  }
+  if (p.music) {
+    // 音乐预设：设置12路音量滑块
+    p.music.forEach((v, i) => { const input = document.querySelector(`input[data-ch="${i}"]`); if (input) { input.value = v; document.getElementById('musicVal'+i).textContent = v; } });
+    remapAllMusicGains();
+    // 高亮当前预设按钮
+    document.querySelectorAll('#musicPresets button').forEach(b => b.classList.remove('active'));
+    const musBtn = document.querySelector(`#musicPresets button[onclick*="${name}"]`);
+    if (musBtn) musBtn.classList.add('active');
+  }
+  setStatus(`已切换预设：${name}`);
+}
+function remapAllMusicGains() {
+  for (let i = 0; i < 12; i++) {
+    const slider = document.querySelector(`input[data-ch="${i}"]`);
+    const v = slider ? parseInt(slider.value) / 100 : 0;
+    const src = musicSources.find(s => s.ch === i);
+    if (src && src.gainNode) src.gainNode.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
+  }
+}
+function setStatus(msg) {
+  const el = document.getElementById('statusInfo'); el.textContent = msg;
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => {
+    if (state.ambientPlaying && state.musicPlaying) el.textContent = '全部播放中...';
+    else if (state.ambientPlaying) el.textContent = '环境音播放中...';
+    else if (state.musicPlaying) el.textContent = '音乐播放中...';
+    else el.textContent = '就绪';
+  }, 3000);
+}
+
+// ============================================================
+//  UI构建
+// ============================================================
+function buildUI() {
+  // 10段竖向均衡器
+  const eqRow = document.getElementById('eqVerticalRow');
+  const defaultEQ = [50,50,50,50,50,50,50,50,50,50];  // 0=-40dB,50=0dB,100=+40dB
+  EQ10_BANDS.forEach((band, i) => {
+    const col = document.createElement('div'); col.className = 'eq-vcol';
+    col.innerHTML = `
+      <div class="v-val" id="eqVal${i}">${defaultEQ[i]}</div>
+      <input type="range" min="0" max="100" value="${defaultEQ[i]}" data-eq="${i}" oninput="setAmbientBand(${i}, this.value)">
+      <div class="v-freq">${band.label}Hz</div>
+    `;
+    eqRow.appendChild(col);
+  });
+  // 12路横向滑块
+  const musicSliders = document.getElementById('musicSliders');
+  const defaultMus = [80,60,40,75,55,65,50,45,60,55,40,35];
+  for (let i = 0; i < 12; i++) {
+    const row = document.createElement('div'); row.className = 'track-row'; row.id = 'trackRow' + i;
+    row.innerHTML = `
+      <div class="track-label">第${i+1}路</div>
+      <input type="range" min="0" max="100" value="${defaultMus[i]}" data-ch="${i}" oninput="setMusicGain(${i}, this.value)">
+      <div class="track-val" id="musicVal${i}">${defaultMus[i]}</div>
+    `;
+    musicSliders.appendChild(row);
+  }
+}
+async function updateAmbientLabel() {
+  const el = document.getElementById('ambientLabel');
+  if (!state.currentAmbientId) {
+    el.innerHTML = '🌿 点击选择场景 <span class="arrow">▾</span>';
+    return;
+  }
+  try {
+    const files = await dbGetAll('ambient_files');
+    const f = files.find(x => x.id === state.currentAmbientId);
+    el.innerHTML = f ? `🌿 <span class="name">${f.name}</span> <span class="arrow">▾</span>` : '🌿 点击选择场景 <span class="arrow">▾</span>';
+  } catch(e) { el.innerHTML = '🌿 点击选择场景 <span class="arrow">▾</span>'; }
+}
+async function updateMusicLabel() {
+  const el = document.getElementById('musicLabel');
+  if (!state.currentMusicId) {
+    el.innerHTML = '🎹 点击选择曲目 <span class="arrow">▾</span>';
+    return;
+  }
+  try {
+    const files = await dbGetAll('music_files');
+    const f = files.find(x => x.id === state.currentMusicId);
+    el.innerHTML = f ? `🎹 <span class="name">${f.name}</span> <span class="arrow">▾</span>` : '🎹 点击选择曲目 <span class="arrow">▾</span>';
+  } catch(e) { el.innerHTML = '🎹 点击选择曲目 <span class="arrow">▾</span>'; }
+}
+async function refreshAllTags() {
+  await updateAmbientLabel(); await updateMusicLabel();
+  updateDBUsage();
+}
+
+// ============================================================
+//  选取弹窗
+// ============================================================
+async function showAmbientPicker() {
+  const overlay = document.getElementById('ambientPickerOverlay');
+  const list = document.getElementById('ambientPickerList');
+  const files = await dbGetAll('ambient_files');
+  list.innerHTML = files.length === 0
+    ? '<div class="empty-hint">暂无场景，请通过 ⚙ 管理后台上传</div>'
+    : files.map(f => `<div class="item${state.currentAmbientId===f.id?' active':''}" onclick="selectAmbientFromPicker('${f.id}','ambient')">🌿 ${f.name} <small style="color:var(--text2);margin-left:auto;">${f.fileName||''}</small></div>`).join('');
+  overlay.classList.add('show');
+}
+async function showMusicPicker() {
+  const overlay = document.getElementById('musicPickerOverlay');
+  const list = document.getElementById('musicPickerList');
+  const files = await dbGetAll('music_files');
+  list.innerHTML = files.length === 0
+    ? '<div class="empty-hint">暂无曲目，请通过 ⚙ 管理后台上传</div>'
+    : files.map(f => `<div class="item${state.currentMusicId===f.id?' active':''}" onclick="selectMusicFromPicker('${f.id}','music')">🎹 ${f.name} <small style="color:var(--text2);margin-left:auto;">${f.channelCount||f.channels?.length||0}路</small></div>`).join('');
+  overlay.classList.add('show');
+}
+function closePicker(type) { document.getElementById(type+'PickerOverlay').classList.remove('show'); }
+async function selectMusicFromPicker(id, type) {
+  closePicker(type); await selectMusic(id);
+}
+async function selectAmbientFromPicker(id, type) {
+  closePicker(type); await selectAmbient(id);
+}
+document.getElementById('ambientPickerOverlay').addEventListener('click', function(e){ if(e.target===this) closePicker('ambient'); });
+document.getElementById('musicPickerOverlay').addEventListener('click', function(e){ if(e.target===this) closePicker('music'); });
+
+// ============================================================
+//  后台管理
+// ============================================================
+const ADMIN_PASSWORD = '7856'; let adminLoggedIn = false;
+function showAdminLogin() { document.getElementById('adminOverlay').classList.add('show'); document.getElementById('adminLogin').style.display='block'; document.getElementById('adminContent').style.display='none'; adminLoggedIn=false; setTimeout(()=>document.getElementById('adminPwd').focus(),200); }
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('show'); document.getElementById('adminPwd').value=''; }
+function adminLogin() {
+  if (document.getElementById('adminPwd').value.trim() === ADMIN_PASSWORD) {
+    adminLoggedIn = true;
+    document.getElementById('adminLogin').style.display='none';
+    document.getElementById('adminContent').style.display='block';
+    document.getElementById('adminPwd').value='';
+    refreshAdminLists(); updateDBUsage();
+  } else { alert('密码错误'); document.getElementById('adminPwd').value=''; document.getElementById('adminPwd').focus(); }
+}
+// 上传：本地 FileReader → IndexedDB
+function showUploadProgress(progEl) {
+  const bar = progEl.querySelector('.fill');
+  const pct = progEl.querySelector('.pct');
+  progEl.style.display = 'block';
+  bar.style.width = '50%'; pct.textContent = '处理中...';
+  return () => {
+    bar.style.width = '100%'; pct.textContent = '100% ✓';
+    setTimeout(() => { progEl.style.display = 'none'; }, 1200);
+  };
+}
+async function uploadAmbient() {
+  if (!adminLoggedIn) return;
+  const name = document.getElementById('ambientName').value.trim(), file = document.getElementById('ambientFile').files[0];
+  if (!name) { alert('请输入场景名称'); return; }
+  if (!file) { alert('请选择音频文件'); return; }
+  try {
+    const done = showUploadProgress(document.getElementById('ambUploadProg'));
+    const ab = await file.arrayBuffer();
+    await dbPut('ambient_files', { name, fileName: file.name, fileType: file.type, fileSize: file.size, data: ab });
+    done();
+    document.getElementById('ambientName').value=''; document.getElementById('ambientFile').value='';
+    await updateAmbientLabel(); await refreshAdminLists(); updateDBUsage();
+    setStatus(`场景「${name}」上传成功`);
+  } catch(e) { alert('上传失败: ' + e.message); }
+}
+async function uploadMusic() {
+  if (!adminLoggedIn) return;
+  const name = document.getElementById('musicTrackName').value.trim(), files = document.getElementById('musicFiles').files;
+  if (!name) { alert('请输入曲目名称'); return; }
+  if (!files.length) { alert('请选择分轨文件'); return; }
+  if (files.length > 12) { alert('最多12个分轨文件'); return; }
+  try {
+    const done = showUploadProgress(document.getElementById('musUploadProg'));
+    const channels = []; const fileNames = [];
+    for (const f of files) { channels.push(await f.arrayBuffer()); fileNames.push(f.name); }
+    const rec = await dbPut('music_files', { name, channelCount: channels.length, channels, fileNames });
+    done();
+    document.getElementById('musicTrackName').value=''; document.getElementById('musicFiles').value='';
+    await updateMusicLabel(); await refreshAdminLists(); updateDBUsage();
+    setStatus(`曲目「${name}」上传成功（${rec.channelCount}路）`);
+  } catch(e) { alert('上传失败: ' + e.message); }
+}
+// 刷新时播放旋转动画
+function spinRefresh(iconId) {
+  const el = document.getElementById(iconId);
+  el.classList.add('btn-refreshing');
+  return () => el.classList.remove('btn-refreshing');
+}
+async function refreshAmbientFiles() {
+  const done = spinRefresh('ambRefreshIcon');
+  const c = document.getElementById('ambientFileList');
+  try {
+    const files = await dbGetAll('ambient_files');
+    c.innerHTML = files.map(f => `<div><span>🌿 ${f.name} <small>(${f.fileName}, ${(f.fileSize/1048576).toFixed(1)}MB)</small></span><span class="del" onclick="deleteAmbient('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
+    document.getElementById('ambientCount').textContent = files.length;
+  } finally { done(); }
+}
+async function refreshMusicFiles() {
+  const done = spinRefresh('musRefreshIcon');
+  const c = document.getElementById('musicFileList');
+  try {
+    const files = await dbGetAll('music_files');
+    c.innerHTML = files.map(f => `<div><span>🎹 ${f.name} <small>(${f.channelCount}路分轨)</small></span><span class="del" onclick="deleteMusic('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
+    document.getElementById('musicCount').textContent = files.length;
+  } finally { done(); }
+}
+async function refreshAdminLists() { await refreshAmbientFiles(); await refreshMusicFiles(); }
+async function deleteAmbient(id) {
+  if (!confirm('确定删除？')) return;
+  await dbDelete('ambient_files', id);
+  if (state.currentAmbientId===id) { state.currentAmbientId=null; stopAmbient(); ambientBuffer=null; }
+  await updateAmbientLabel(); await refreshAmbientFiles(); updateDBUsage();
+}
+async function deleteMusic(id) {
+  if (!confirm('确定删除？')) return;
+  await dbDelete('music_files', id);
+  if (state.currentMusicId===id) { state.currentMusicId=null; stopMusic(); musicBuffers=[]; state.loadingMusic=false; updateTrackStates(); }
+  await updateMusicLabel(); await refreshMusicFiles(); updateDBUsage();
+}
+async function updateDBUsage() {
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const est = await navigator.storage.estimate();
+      const fmt = (b) => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : b > 1024 ? (b/1024).toFixed(0)+' KB' : b+' B';
+      document.getElementById('dbUsage').textContent = '已用 ' + fmt(est.usage) + ' / ' + fmt(est.quota);
+    } else {
+      document.getElementById('dbUsage').textContent = '浏览器存储';
+    }
+  } catch(e) {
+    document.getElementById('dbUsage').textContent = '本地存储';
+  }
+}
+async function clearAllData() {
+  if (!confirm('⚠️ 确定清空全部数据？此操作不可恢复！')) return;
+  if (!confirm('再次确认：清空所有环境音、音乐文件和配置？')) return;
+  await dbClear('ambient_files'); await dbClear('music_files');
+  stopAll(); state.ambientPlaying = false; state.musicPlaying = false; state.currentAmbientId = null; state.currentMusicId = null;
+  ambientBuffer = null; musicBuffers = []; syncPlayBtn();
+  updateTrackStates();
+  await refreshAllTags(); await refreshAdminLists(); updateDBUsage(); setStatus('全部数据已清空');
+}
+async function exportConfig() {
+  const a=await dbGetAll('ambient_files'), m=await dbGetAll('music_files');
+  const cfg={version:'1.0',exportedAt:new Date().toISOString(),ambientScenes:a.map(f=>({id:f.id,name:f.name,fileName:f.fileName})),musicTracks:m.map(f=>({id:f.id,name:f.name,channelCount:f.channelCount}))};
+  const blob=new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob), el=document.createElement('a');
+  el.href=url; el.download='naxin_config_'+new Date().toISOString().slice(0,10)+'.json'; el.click(); URL.revokeObjectURL(url);
+  alert('配置已导出');
+}
+document.getElementById('adminOverlay').addEventListener('click', function(e){ if(e.target===this) closeAdmin(); });
+
+// ============================================================
+//  启动
+// ============================================================
+async function init() {
+  buildUI();
+  await openDB();
+  const saved = localStorage.getItem('naxin_theme') || 'forest'; setTheme(saved);
+  const ambients = await dbGetAll('ambient_files');
+  const musics = await dbGetAll('music_files');
+  if (ambients.length > 0) await selectAmbient(ambients[0].id);
+  else updateAmbientLabel();
+  if (musics.length > 0) await selectMusic(musics[0].id);
+  else updateMusicLabel();
+  updateTrackStates();
+  updateDBUsage();
+}
+
+// 桌面版：本地存储，无需 Service Worker
+
+init();
+</script>
+</body>
+</html>
