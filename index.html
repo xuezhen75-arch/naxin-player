@@ -9,73 +9,77 @@
    主题系统：三色
    ============================================================ */
 :root {
-  --bg: #f5f0eb;
-  --bg-card: #ffffff;
-  --bg-card2: #fafaf7;
-  --text: #2c2c2a;
-  --text2: #888780;
-  --text3: #5c5c56;
-  --border: #d3d1c7;
-  --border2: #e8e6de;
-  --accent: #3d7a5c;
-  --accent2: #5dcaa5;
-  --accent3: #0f6e56;
-  --accent-bg: #e1f5ee;
+  --bg: #e8efe4;
+  --bg-card: #f4f8f1;
+  --bg-card2: #ebf1e7;
+  --text: #1e2d1a;
+  --text2: #6b7a62;
+  --text3: #44583b;
+  --border: #c2d4b6;
+  --border2: #dae6d1;
+  --accent: #2d6e3f;
+  --accent2: #4daf62;
+  --accent3: #1a4a28;
+  --accent-bg: #ddf0da;
   --music-accent: #534ab7;
   --music-bg: #eeedfe;
   --music-border: #7f77dd;
-  --slider-track: #d3d1c7;
-  --slider-thumb: #534ab7;
-  --slider-ambi: #5dcaa5;
-  --switch-off: #d3d1c7;
-  --switch-on: #5dcaa5;
-  --topbar-bg: #ffffff;
-  --bottombar-bg: #ffffff;
-  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --slider-track: #c2d4b6;
+  --slider-thumb: #2d6e3f;
+  --slider-ambi: #4daf62;
+  --switch-off: #c2d4b6;
+  --switch-on: #4daf62;
+  --topbar-bg: #f4f8f1;
+  --bottombar-bg: #f4f8f1;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06);
   --radius: 10px;
   --radius-sm: 6px;
 }
 body.theme-ocean {
-  --bg: #eaf2f8;
-  --bg-card: #ffffff;
-  --bg-card2: #f5f8fb;
-  --text: #1a2740;
-  --text2: #6b8299;
-  --text3: #3d5568;
-  --border: #c4d4e3;
-  --border2: #dde6f0;
-  --accent: #2e6b9e;
-  --accent2: #4d94cc;
-  --accent3: #1a4d7a;
-  --accent-bg: #dceefa;
-  --music-accent: #2e6b9e;
-  --music-bg: #e3eefa;
-  --music-border: #4d94cc;
-  --slider-track: #c4d4e3;
-  --slider-thumb: #2e6b9e;
-  --slider-ambi: #4d94cc;
-  --switch-on: #4d94cc;
+  --bg: #e2eef8;
+  --bg-card: #f0f6fc;
+  --bg-card2: #e7f0f9;
+  --text: #0f1f35;
+  --text2: #5b7d9e;
+  --text3: #2e4d6e;
+  --border: #b8d0e8;
+  --border2: #d4e3f2;
+  --accent: #1d5c94;
+  --accent2: #3788cc;
+  --accent3: #12406b;
+  --accent-bg: #d8ebfb;
+  --music-accent: #1d5c94;
+  --music-bg: #e1eef9;
+  --music-border: #3788cc;
+  --slider-track: #b8d0e8;
+  --slider-thumb: #1d5c94;
+  --slider-ambi: #3788cc;
+  --switch-on: #3788cc;
+  --topbar-bg: #f0f6fc;
+  --bottombar-bg: #f0f6fc;
 }
 body.theme-warm {
-  --bg: #faf3eb;
-  --bg-card: #ffffff;
-  --bg-card2: #fefaf5;
-  --text: #3d2e1f;
-  --text2: #9e8c78;
-  --text3: #6b5540;
-  --border: #e0d3c0;
-  --border2: #efe6d8;
-  --accent: #c7763a;
-  --accent2: #e8995e;
-  --accent3: #8c4a20;
-  --accent-bg: #fdf0e1;
-  --music-accent: #c7763a;
-  --music-bg: #fdf0e1;
-  --music-border: #e8995e;
-  --slider-track: #e0d3c0;
-  --slider-thumb: #c7763a;
-  --slider-ambi: #e8995e;
-  --switch-on: #e8995e;
+  --bg: #f7ece0;
+  --bg-card: #fdf6ef;
+  --bg-card2: #f9f0e5;
+  --text: #362816;
+  --text2: #8e7558;
+  --text3: #5c4430;
+  --border: #dcc8a8;
+  --border2: #eddfcc;
+  --accent: #b85a20;
+  --accent2: #e07d3e;
+  --accent3: #7a3612;
+  --accent-bg: #fce8d5;
+  --music-accent: #b85a20;
+  --music-bg: #fce8d5;
+  --music-border: #e07d3e;
+  --slider-track: #dcc8a8;
+  --slider-thumb: #b85a20;
+  --slider-ambi: #e07d3e;
+  --switch-on: #e07d3e;
+  --topbar-bg: #fdf6ef;
+  --bottombar-bg: #fdf6ef;
 }
 
 /* ============================================================
@@ -118,12 +122,13 @@ body {
   border-radius: var(--radius-sm); padding: 4px 10px; font-size: 11px; cursor: pointer;
 }
 .header .admin-btn:hover { background: var(--bg-card2); color: var(--text); }
-.theme-switch { display: flex; gap: 4px; background: var(--bg-card2); border-radius: 20px; padding: 2px; border: 1px solid var(--border2); }
+.theme-switch { display: flex; gap: 4px; background: var(--bg-card2); border-radius: 20px; padding: 3px; border: 1px solid var(--border2); }
 .theme-switch button {
-  width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer;
-  transition: 0.2s; font-size: 13px; display: flex; align-items: center; justify-content: center; background: transparent;
+  width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+  transition: 0.25s; font-size: 14px; display: flex; align-items: center; justify-content: center; background: transparent;
 }
-.theme-switch button.active { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.15); transform: scale(1.1); }
+.theme-switch button:hover { background: var(--bg-card); transform: scale(1.08); }
+.theme-switch button.active { background: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.12); transform: scale(1.15); }
 
 /* ============================================================
    主体（上下布局，手机优先）
@@ -446,18 +451,47 @@ body {
 .admin-section .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .admin-section button {
   padding: 6px 14px; font-size: 12px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border); cursor: pointer; background: var(--bg-card); color: var(--text); transition: 0.2s;
+  border: 1px solid var(--border); cursor: pointer; background: var(--bg-card); color: var(--text); transition: all 0.15s;
+}
+.admin-section button:hover { background: var(--border2); }
+.admin-section button:active {
+  background: var(--accent); color: #fff; border-color: var(--accent3);
+  transform: scale(0.96); box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
 }
 .admin-section button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.admin-section button.primary:active { background: var(--accent3); }
 .admin-section button.danger { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+.admin-section button.danger:active { background: #c0392b; border-color: #a93226; }
 .admin-file-list { font-size: 11px; color: var(--text2); max-height: 120px; overflow-y: auto; }
 .admin-file-list div { padding: 3px 0; border-bottom: 1px solid var(--border2); display: flex; justify-content: space-between; align-items: center; }
 .admin-file-list .del { color: #e74c3c; cursor: pointer; font-size: 14px; }
+/* 上传进度条 */
+.upload-progress {
+  display: none;
+  height: 8px; background: var(--border2); border-radius: 4px; margin-top: 6px; overflow: hidden; position: relative;
+}
+.upload-progress .fill {
+  height: 100%; border-radius: 4px;
+  width: 0%; transition: width 0.3s ease;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  background-size: 200% 100%;
+  animation: uploadShimmer 1.5s ease-in-out infinite;
+}
+@keyframes uploadShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.upload-progress .pct {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-size: 8px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); z-index: 1;
+}
+/* 刷新按钮旋转 */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.btn-refreshing { animation: spin 0.8s linear infinite; display: inline-block; }
 .password-input {
   font-size: 16px; text-align: center; letter-spacing: 4px; padding: 10px;
   border: 2px solid var(--border); border-radius: var(--radius); width: 100%; outline: none; font-family: inherit;
 }
-.login-hint { font-size: 11px; color: var(--text2); text-align: center; margin-top: 8px; }
 
 /* ============================================================
    响应式
@@ -570,9 +604,6 @@ body {
       <button onclick="applyPreset('mus_rhythm')">🥁 律动</button>
       <button onclick="applyPreset('mus_ethereal')">🌌 空灵</button>
     </div>
-    <div style="font-size:9px;color:var(--text2);text-align:center;margin-top:2px;line-height:1.4;">
-      ⚠ 音乐预设为通用混音风格，效果取决于上传的分轨乐器编排<br>建议将主奏乐器放前4路、和声5-8路、贝斯/节奏9-12路
-    </div>
   </div>
 
 </div>
@@ -615,8 +646,7 @@ body {
     <div id="adminLogin">
       <h3>🔐 管理登录</h3>
       <p style="font-size:11px;color:var(--text2);margin:8px 0;">请输入管理密码</p>
-      <input type="password" class="password-input" id="adminPwd" placeholder="····" maxlength="20" onkeydown="if(event.key==='Enter')adminLogin()">
-      <p class="login-hint">默认密码：7856</p>
+      <input type="password" class="password-input" id="adminPwd" placeholder="输入管理密码" maxlength="20" onkeydown="if(event.key==='Enter')adminLogin()">
       <div style="text-align:center;margin-top:8px;">
         <button class="btn-small primary" onclick="adminLogin()">登录</button>
         <button class="btn-small" onclick="closeAdmin()">取消</button>
@@ -634,9 +664,10 @@ body {
         <label>环境音文件 <span style="color:var(--text2);font-size:10px;">（支持 MP3 / OGG / WAV / AAC / M4A / FLAC / WebM）</span></label>
         <input type="file" id="ambientFile" accept="audio/*,.mp3,.ogg,.wav,.aac,.m4a,.flac,.webm">
         <div class="btn-row">
-          <button class="primary" onclick="uploadAmbient()">📤 上传场景</button>
-          <button onclick="refreshAmbientFiles()">🔄 刷新列表</button>
+          <button class="primary" id="ambUploadBtn" onclick="uploadAmbient()">📤 上传场景</button>
+          <button id="ambRefreshBtn" onclick="refreshAmbientFiles()"><span id="ambRefreshIcon">🔄</span> 刷新列表</button>
         </div>
+        <div class="upload-progress" id="ambUploadProg"><div class="fill"></div><span class="pct"></span></div>
         <div class="admin-file-list" id="ambientFileList"><div style="color:var(--text2);">加载中...</div></div>
       </div>
       <div class="admin-section">
@@ -646,21 +677,19 @@ body {
         <label>分轨文件（可多选，按选择顺序对应第1-12路）<span style="color:var(--text2);font-size:10px;">（支持 MP3 / OGG / WAV / AAC / M4A / FLAC / WebM，最多12个）</span></label>
         <input type="file" id="musicFiles" accept="audio/*,.mp3,.ogg,.wav,.aac,.m4a,.flac,.webm" multiple>
         <div class="btn-row">
-          <button class="primary" onclick="uploadMusic()">📤 上传曲目</button>
-          <button onclick="refreshMusicFiles()">🔄 刷新列表</button>
+          <button class="primary" id="musUploadBtn" onclick="uploadMusic()">📤 上传曲目</button>
+          <button id="musRefreshBtn" onclick="refreshMusicFiles()"><span id="musRefreshIcon">🔄</span> 刷新列表</button>
         </div>
+        <div class="upload-progress" id="musUploadProg"><div class="fill"></div><span class="pct"></span></div>
         <div class="admin-file-list" id="musicFileList"><div style="color:var(--text2);">加载中...</div></div>
       </div>
       <div class="admin-section">
-        <h4>📡 系统信息</h4>
-        <p style="font-size:11px;color:var(--text2);">
-          <b>📊 存储用量</b><br>
-          🌿 环境音：<span id="ambientStorage">-</span>（<span id="ambientCount">-</span> 个场景）<br>
-          🎹 音乐曲目：<span id="musicStorage">-</span>（<span id="musicCount">-</span> 首，支持12路分轨/首）<br>
-          📦 总计：<span id="dbUsage">计算中...</span><br>
-          💡 素材存储在服务器 Render 磁盘（<b>1GB 免费</b>），所有设备共享同一素材库<br>
-          版本：v1.7.2 科学预设版<br>
-          音谋加H5接口：<span style="color:var(--accent);">已预留（/api/yinmoujia/sync）</span>
+        <h4>📦 存储用量</h4>
+        <p style="font-size:12px;color:var(--text);">
+          <span id="dbUsage">计算中...</span>
+        </p>
+        <p style="font-size:10px;color:var(--text2);margin-top:4px;">
+          🌿 <span id="ambientCount">-</span> 个环境音 · 🎹 <span id="musicCount">-</span> 首曲目
         </p>
         <div class="btn-row">
           <button class="danger" onclick="clearAllData()">🗑 清空全部数据</button>
@@ -1330,40 +1359,86 @@ function adminLogin() {
     refreshAdminLists(); updateDBUsage();
   } else { alert('密码错误'); document.getElementById('adminPwd').value=''; document.getElementById('adminPwd').focus(); }
 }
+// 上传辅助：带进度条的 XHR POST
+function uploadWithProgress(url, formData, progEl, onDone) {
+  const bar = progEl.querySelector('.fill');
+  const pct = progEl.querySelector('.pct');
+  progEl.style.display = 'block';
+  bar.style.width = '0%'; pct.textContent = '';
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.setRequestHeader('X-Admin-Token', API_TOKEN);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const p = Math.round(e.loaded / e.total * 100);
+        bar.style.width = p + '%'; pct.textContent = p + '%';
+      }
+    };
+    xhr.onload = () => {
+      bar.style.width = '100%'; pct.textContent = '100% ✓';
+      setTimeout(() => { progEl.style.display = 'none'; }, 1200);
+      if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
+      else reject(new Error(xhr.status + ': ' + xhr.responseText));
+    };
+    xhr.onerror = () => { progEl.style.display = 'none'; reject(new Error('网络错误')); };
+    xhr.send(formData);
+  });
+}
 async function uploadAmbient() {
   if (!adminLoggedIn) return;
   const name = document.getElementById('ambientName').value.trim(), file = document.getElementById('ambientFile').files[0];
   if (!name) { alert('请输入场景名称'); return; }
   if (!file) { alert('请选择音频文件'); return; }
-  const ab = await file.arrayBuffer();
-  const rec = await dbPut('ambient_files', { name, fileName: file.name, fileType: file.type, fileSize: file.size, data: ab });
-  document.getElementById('ambientName').value=''; document.getElementById('ambientFile').value='';
-  await refreshAmbientTags(); await refreshAdminLists(); updateDBUsage();
-  setStatus(`场景「${name}」上传成功`); alert(`场景「${name}」上传成功！`);
+  try {
+    const fd = new FormData();
+    fd.append('name', name);
+    fd.append('file', file);
+    await uploadWithProgress('/api/ambient', fd, document.getElementById('ambUploadProg'));
+    document.getElementById('ambientName').value=''; document.getElementById('ambientFile').value='';
+    await refreshAmbientTags(); await refreshAdminLists(); updateDBUsage();
+    setStatus(`场景「${name}」上传成功`);
+  } catch(e) { alert('上传失败: ' + e.message); }
 }
 async function uploadMusic() {
   if (!adminLoggedIn) return;
-  const name = document.getElementById('musicTrackName').value.trim(), files = Array.from(document.getElementById('musicFiles').files);
+  const name = document.getElementById('musicTrackName').value.trim(), files = document.getElementById('musicFiles').files;
   if (!name) { alert('请输入曲目名称'); return; }
-  if (files.length===0) { alert('请选择分轨文件'); return; }
-  if (files.length>12) { alert('最多12个分轨文件'); return; }
-  const channels = []; for (const f of files) channels.push(await f.arrayBuffer());
-  const rec = await dbPut('music_files', { name, channelCount: channels.length, channels, fileNames: files.map(f=>f.name) });
-  document.getElementById('musicTrackName').value=''; document.getElementById('musicFiles').value='';
-  await refreshMusicTags(); await refreshAdminLists(); updateDBUsage();
-  setStatus(`曲目「${name}」上传成功（${channels.length}路）`); alert(`曲目「${name}」上传成功！共 ${rec.channelCount} 路分轨。`);
+  if (!files.length) { alert('请选择分轨文件'); return; }
+  if (files.length > 12) { alert('最多12个分轨文件'); return; }
+  try {
+    const fd = new FormData();
+    fd.append('name', name);
+    for (const f of files) fd.append('files', f);
+    const rec = await uploadWithProgress('/api/music', fd, document.getElementById('musUploadProg'));
+    document.getElementById('musicTrackName').value=''; document.getElementById('musicFiles').value='';
+    await refreshMusicTags(); await refreshAdminLists(); updateDBUsage();
+    setStatus(`曲目「${name}」上传成功（${rec.channelCount}路）`);
+  } catch(e) { alert('上传失败: ' + e.message); }
+}
+// 刷新时播放旋转动画
+function spinRefresh(iconId) {
+  const el = document.getElementById(iconId);
+  el.classList.add('btn-refreshing');
+  return () => el.classList.remove('btn-refreshing');
 }
 async function refreshAmbientFiles() {
+  const done = spinRefresh('ambRefreshIcon');
   const c = document.getElementById('ambientFileList');
-  const files = await dbGetAll('ambient_files');
-  c.innerHTML = files.map(f => `<div><span>🌿 ${f.name} <small>(${f.fileName}, ${(f.fileSize/1048576).toFixed(1)}MB)</small></span><span class="del" onclick="deleteAmbient('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
-  document.getElementById('ambientCount').textContent = files.length;
+  try {
+    const files = await dbGetAll('ambient_files');
+    c.innerHTML = files.map(f => `<div><span>🌿 ${f.name} <small>(${f.fileName}, ${(f.fileSize/1048576).toFixed(1)}MB)</small></span><span class="del" onclick="deleteAmbient('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
+    document.getElementById('ambientCount').textContent = files.length;
+  } finally { done(); }
 }
 async function refreshMusicFiles() {
+  const done = spinRefresh('musRefreshIcon');
   const c = document.getElementById('musicFileList');
-  const files = await dbGetAll('music_files');
-  c.innerHTML = files.map(f => `<div><span>🎹 ${f.name} <small>(${f.channelCount}路分轨)</small></span><span class="del" onclick="deleteMusic('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
-  document.getElementById('musicCount').textContent = files.length;
+  try {
+    const files = await dbGetAll('music_files');
+    c.innerHTML = files.map(f => `<div><span>🎹 ${f.name} <small>(${f.channelCount}路分轨)</small></span><span class="del" onclick="deleteMusic('${f.id}')">✕</span></div>`).join('')||'<div style="color:var(--text2);">暂无文件</div>';
+    document.getElementById('musicCount').textContent = files.length;
+  } finally { done(); }
 }
 async function refreshAdminLists() { await refreshAmbientFiles(); await refreshMusicFiles(); }
 async function deleteAmbient(id) {
@@ -1382,9 +1457,7 @@ async function updateDBUsage() {
   try {
     const r = await fetch('/api/usage'); const d = await r.json();
     const fmt = (b) => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : (b/1024).toFixed(0)+' KB';
-    document.getElementById('dbUsage').textContent = fmt(d.totalBytes);
-    document.getElementById('ambientStorage').textContent = '-';
-    document.getElementById('musicStorage').textContent = '-';
+    document.getElementById('dbUsage').textContent = '已用 ' + fmt(d.totalBytes) + ' / 1GB';
     document.getElementById('ambientCount').textContent = d.ambientCount;
     document.getElementById('musicCount').textContent = d.musicCount;
   } catch(e) {
