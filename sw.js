@@ -1,7 +1,7 @@
-// Naxin Player Service Worker v2 — 音频缓存 + 离线可用
-const CACHE_STATIC = 'naxin-static-v2';
-const CACHE_AUDIO = 'naxin-audio-v2';
-const CACHE_API   = 'naxin-api-v2';
+// Naxin Player Service Worker v3 — 音频缓存 + 离线可用
+const CACHE_STATIC = 'naxin-static-v3';
+const CACHE_AUDIO = 'naxin-audio-v3';
+const CACHE_API   = 'naxin-api-v3';
 
 // 预缓存 App Shell（安装时立即缓存）
 const STATIC_FILES = [
@@ -20,13 +20,15 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(k => k.startsWith('naxin-') &&
-          k !== CACHE_STATIC && k !== CACHE_AUDIO && k !== CACHE_API)
-          .map(k => caches.delete(k))
+        keys.map(k => {
+          if (k.startsWith('naxin-') && k !== CACHE_STATIC && k !== CACHE_AUDIO && k !== CACHE_API) {
+            return caches.delete(k);
+          }
+          return Promise.resolve();
+        })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
