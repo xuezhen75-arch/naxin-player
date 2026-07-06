@@ -1644,15 +1644,24 @@ async function init() {
 // GET  /api/yinmoujia/tracks — 从云端拉取曲目列表
 // window.naxinAPI = { setUser, getPlayState, setPlayState, loadTrack }
 
-// Service Worker — 缓存加速
+// Service Worker — 先清旧缓存，再注册新版
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(reg => {
-    console.log('SW 注册成功', reg.scope);
-    // 显示缓存状态
-    if (navigator.serviceWorker.controller) {
-      setStatus('已缓存 — 离线可用');
-    }
-  }).catch(e => console.warn('SW 注册失败', e));
+  // 先注销所有旧SW，确保获取最新代码
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  }).then(() => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('SW v3 注册成功', reg.scope);
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        newSW.addEventListener('statechange', () => {
+          if (newSW.state === 'activated') {
+            window.location.reload();
+          }
+        });
+      });
+    }).catch(e => console.warn('SW 注册失败', e));
+  });
 }
 
 init();
