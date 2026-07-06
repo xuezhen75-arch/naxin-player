@@ -790,7 +790,7 @@ body {
 // ============================================================
 //  数据存储 — 服务器API（主）
 // ============================================================
-const API_TOKEN = '7856';
+let adminToken = '';
 const DB_NAME = 'naxin_player_cache', DB_VERSION = 1;
 
 let db = null;
@@ -1453,17 +1453,29 @@ document.getElementById('musicPickerOverlay').addEventListener('click', function
 // ============================================================
 //  后台管理
 // ============================================================
-const ADMIN_PASSWORD = '7856'; let adminLoggedIn = false;
+let adminLoggedIn = false;
 function showAdminLogin() { document.getElementById('adminOverlay').classList.add('show'); document.getElementById('adminLogin').style.display='block'; document.getElementById('adminContent').style.display='none'; adminLoggedIn=false; setTimeout(()=>document.getElementById('adminPwd').focus(),200); }
 function closeAdmin() { document.getElementById('adminOverlay').classList.remove('show'); document.getElementById('adminPwd').value=''; }
-function adminLogin() {
-  if (document.getElementById('adminPwd').value.trim() === ADMIN_PASSWORD) {
-    adminLoggedIn = true;
-    document.getElementById('adminLogin').style.display='none';
-    document.getElementById('adminContent').style.display='block';
-    document.getElementById('adminPwd').value='';
-    refreshAdminLists(); updateDBUsage();
-  } else { alert('密码错误'); document.getElementById('adminPwd').value=''; document.getElementById('adminPwd').focus(); }
+async function adminLogin() {
+  const pwd = document.getElementById('adminPwd').value.trim();
+  if (!pwd) return;
+  try {
+    const r = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) });
+    if (r.ok) {
+      adminToken = pwd;
+      adminLoggedIn = true;
+      document.getElementById('adminLogin').style.display='none';
+      document.getElementById('adminContent').style.display='block';
+      document.getElementById('adminPwd').value='';
+      refreshAdminLists(); updateDBUsage();
+    } else {
+      alert('密码错误');
+      document.getElementById('adminPwd').value='';
+      document.getElementById('adminPwd').focus();
+    }
+  } catch(e) {
+    alert('认证失败: ' + e.message);
+  }
 }
 // 上传辅助：带进度条的 XHR POST
 function uploadWithProgress(url, formData, progEl, onDone) {
@@ -1474,7 +1486,7 @@ function uploadWithProgress(url, formData, progEl, onDone) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
-    xhr.setRequestHeader('X-Admin-Token', API_TOKEN);
+    xhr.setRequestHeader('X-Admin-Token', adminToken);
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
         const p = Math.round(e.loaded / e.total * 100);
