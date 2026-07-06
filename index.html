@@ -1020,29 +1020,50 @@ function toggleAmbientPlay() {
 //  音乐分轨（12路独立GainNode）
 // ============================================================
 async function loadMusicBuffers(id, onProgress) {
-  const meta = await dbGet('music_files', id);  // JSON { id, name, channelCount, fileNames }
+  const meta = await dbGet('music_files', id);
   if (!meta || !meta.channelCount) return [];
-  // 并行下载+解码所有分轨 — 12路同时请求，不串行等
-  let completed = 0;
   const total = Math.min(meta.channelCount, 12);
-  const promises = [];
-  for (let i = 0; i < total; i++) {
-    promises.push((async (ch) => {
+  const bufs = [];
+  // 分批加载：先加载前4路快速开始播放，剩下的逐个补
+  const firstBatch = Math.min(4, total);
+  for (let i = 0; i < firstBatch; i++) {
+    try {
+      const data = await dbGetM('music_files', id, i);
+      bufs[i] = await audioCtx.decodeAudioData(data.slice(0));
+    } catch(e) {
+      bufs[i] = null;
+    }
+    if (onProgress) onProgress(i + 1, total);
+  }
+  // 后台补加载剩余通道
+  for (let i = firstBatch; i < total; i++) {
+    (async (ch) => {
       try {
         const data = await dbGetM('music_files', id, ch);
-        const buf = await audioCtx.decodeAudioData(data.slice(0));
-        completed++;
-        if (onProgress) onProgress(completed, total);
-        return buf;
+        bufs[ch] = await audioCtx.decodeAudioData(data.slice(0));
+        // 如果此通道已有source在播放，替换buffer
+        const src = musicSources.find(s => s.ch === ch);
+        if (src && src.source) {
+          const newSrc = audioCtx.createBufferSource();
+          newSrc.buffer = bufs[ch];
+          newSrc.loop = state.loop;
+          const gain = audioCtx.createGain();
+          const slider = document.querySelector(\"input[data-ch='\" + ch + \"']\");
+          gain.gain.value = slider ? parseInt(slider.value) / 100 : 0.5;
+          newSrc.connect(gain).connect(masterGain);
+          newSrc.start(0);
+          try { src.source.stop(); } catch(e) {}
+          src.source = newSrc;
+          src.gainNode = gain;
+        }
+        if (onProgress) onProgress(ch + 1, total);
       } catch(e) {
-        completed++;
-        if (onProgress) onProgress(completed, total);
-        return null;
+        bufs[ch] = null;
+        if (onProgress) onProgress(ch + 1, total);
       }
-    })(i));
+    })(i);
   }
-  const bufs = await Promise.all(promises);
-  // 补齐到12路，空位填null
+  // 补齐到12路
   while (bufs.length < 12) bufs.push(null);
   return bufs;
 }
