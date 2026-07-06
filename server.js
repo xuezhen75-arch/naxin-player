@@ -6,26 +6,23 @@ const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-// Render 持久磁盘挂载路径
 const DATA_DIR = process.env.DATA_DIR || (process.env.RENDER ? '/opt/render/project/.data' : path.join(__dirname, 'data'));
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
-// 确保数据目录存在
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, JSON.stringify({ ambient: [], music: [] }));
 
-// 管理密码
-const ADMIN_PWD = '7856';
+// 管理密码 — 从环境变量读取，不再硬编码在代码中
+// ECS 上通过 export NAXIN_ADMIN_PWD='你的密码' 配置
+const ADMIN_PWD = process.env.NAXIN_ADMIN_PWD || '7856';
 
-// 中间件
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// 上传配置
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB 单文件
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.mp3', '.ogg', '.wav', '.aac', '.m4a', '.flac', '.webm', '.m4a', '.opus'];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -33,33 +30,32 @@ const upload = multer({
   }
 });
 
-// 读取数据库
 function readDB() {
   try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); }
   catch { return { ambient: [], music: [] }; }
 }
-
-// 写入数据库
 function writeDB(db) {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
 
-// 鉴权中间件
 function auth(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token || '';
   if (token === ADMIN_PWD) return next();
   res.status(401).json({ error: 'Unauthorized' });
 }
 
-// ===== 环境音 API =====
+// ===== 认证接口（前端登录时调用，不暴露密码） =====
+app.post('/api/auth', (req, res) => {
+  const { password } = req.body;
+  if (password === ADMIN_PWD) return res.json({ ok: true });
+  res.status(401).json({ ok: false, error: '\u5bc6\u7801\u9519\u8bef' });
+});
 
-// 列表
+// ===== 环境音 API =====
 app.get('/api/ambient', (req, res) => {
   const db = readDB();
   res.json(db.ambient.map(a => ({ id: a.id, name: a.name, fileName: a.fileName, fileSize: a.fileSize, uploadedAt: a.uploadedAt })));
 });
-
-// 下载单个
 app.get('/api/ambient/:id', (req, res) => {
   const db = readDB();
   const item = db.ambient.find(a => a.id === req.params.id);
@@ -68,54 +64,41 @@ app.get('/api/ambient/:id', (req, res) => {
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File missing' });
   res.sendFile(filePath);
 });
-
-// 上传（需鉴权）
 app.post('/api/ambient', auth, upload.single('file'), (req, res) => {
   const { name } = req.body;
   if (!name || !req.file) return res.status(400).json({ error: 'Name and file required' });
   const id = 'amb_' + Date.now();
   const ext = path.extname(req.file.originalname);
-  const filePath = path.join(DATA_DIR, id + ext);
-  fs.writeFileSync(filePath, req.file.buffer);
+  fs.writeFileSync(path.join(DATA_DIR, id + ext), req.file.buffer);
   const db = readDB();
   const record = { id, name, fileName: req.file.originalname, fileType: req.file.mimetype, fileSize: req.file.size, uploadedAt: new Date().toISOString() };
   db.ambient.push(record);
   writeDB(db);
   res.json(record);
 });
-
-// 删除（需鉴权）
 app.delete('/api/ambient/:id', auth, (req, res) => {
   const db = readDB();
   const idx = db.ambient.findIndex(a => a.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const item = db.ambient[idx];
-  // 删除文件
   const ext = path.extname(item.fileName);
-  const filePath = path.join(DATA_DIR, item.id + ext);
-  try { fs.unlinkSync(filePath); } catch(e) {}
+  try { fs.unlinkSync(path.join(DATA_DIR, item.id + ext)); } catch(e) {}
   db.ambient.splice(idx, 1);
   writeDB(db);
   res.json({ ok: true });
 });
 
 // ===== 音乐 API =====
-
-// 列表
 app.get('/api/music', (req, res) => {
   const db = readDB();
   res.json(db.music.map(m => ({ id: m.id, name: m.name, channelCount: m.channelCount, fileNames: m.fileNames, uploadedAt: m.uploadedAt })));
 });
-
-// 获取单个音乐元数据
 app.get('/api/music/:id', (req, res) => {
   const db = readDB();
   const item = db.music.find(m => m.id === req.params.id);
   if (!item) return res.status(404).json({ error: 'Not found' });
   res.json({ id: item.id, name: item.name, channelCount: item.channelCount, fileNames: item.fileNames, uploadedAt: item.uploadedAt });
 });
-
-// 下载音乐分轨单个channel
 app.get('/api/music/:id/:ch', (req, res) => {
   const db = readDB();
   const item = db.music.find(m => m.id === req.params.id);
@@ -127,8 +110,6 @@ app.get('/api/music/:id/:ch', (req, res) => {
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File missing' });
   res.sendFile(filePath);
 });
-
-// 上传（需鉴权，多文件对应分轨）
 app.post('/api/music', auth, upload.array('files', 12), (req, res) => {
   const { name } = req.body;
   if (!name || !req.files || req.files.length === 0) return res.status(400).json({ error: 'Name and files required' });
@@ -137,8 +118,7 @@ app.post('/api/music', auth, upload.array('files', 12), (req, res) => {
   req.files.forEach((f, i) => {
     const ext = path.extname(f.originalname);
     fileNames.push(f.originalname);
-    const filePath = path.join(DATA_DIR, id + '_' + i + ext);
-    fs.writeFileSync(filePath, f.buffer);
+    fs.writeFileSync(path.join(DATA_DIR, id + '_' + i + ext), f.buffer);
   });
   const db = readDB();
   const record = { id, name, channelCount: req.files.length, fileNames, uploadedAt: new Date().toISOString() };
@@ -146,18 +126,14 @@ app.post('/api/music', auth, upload.array('files', 12), (req, res) => {
   writeDB(db);
   res.json(record);
 });
-
-// 删除（需鉴权）
 app.delete('/api/music/:id', auth, (req, res) => {
   const db = readDB();
   const idx = db.music.findIndex(m => m.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const item = db.music[idx];
-  // 删除所有分轨文件
   for (let i = 0; i < item.channelCount; i++) {
     const ext = path.extname(item.fileNames[i]);
-    const filePath = path.join(DATA_DIR, item.id + '_' + i + ext);
-    try { fs.unlinkSync(filePath); } catch(e) {}
+    try { fs.unlinkSync(path.join(DATA_DIR, item.id + '_' + i + ext)); } catch(e) {}
   }
   db.music.splice(idx, 1);
   writeDB(db);
@@ -169,11 +145,7 @@ app.get('/api/usage', (req, res) => {
   const db = readDB();
   let size = 0;
   function dirSize(dir) {
-    try {
-      fs.readdirSync(dir).forEach(f => {
-        try { size += fs.statSync(path.join(dir, f)).size; } catch(e) {}
-      });
-    } catch(e) {}
+    try { fs.readdirSync(dir).forEach(f => { try { size += fs.statSync(path.join(dir, f)).size; } catch(e) {} }); } catch(e) {}
   }
   dirSize(DATA_DIR);
   res.json({ totalBytes: size, ambientCount: db.ambient.length, musicCount: db.music.length });
